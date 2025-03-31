@@ -82,6 +82,7 @@ int main() {
     // "D_ZN" or "D_N"  - indefinite or negative definite
     // Solver can't solve indefinite or negative definite problems but can solve positive semidefinite problems,
     // in this case H correction will take place
+    std::string initMsg;
     if (!solver.SetProblem(nnlsProblem)) {
         QP_NNLS::InitStageStatus initStatus = solver.GetInitStatus();
         if (initStatus == QP_NNLS::InitStageStatus::D_Z) {
