@@ -1,9 +1,13 @@
-#include "decorators.h"
 #include <cassert>
 #include <cmath>
-
+#include "decorators.h"
 
 namespace SMOKE_PROBLEM {
+// Test problem:
+// Number of variables = 12
+// Number of constraints = 3
+// Number of equality constraints = 1
+// H - identity matrix
 using namespace QP_NNLS;
 matrix_t H;
 const std::vector<double> c = {2.17299e6, -13162.7, 1.36145e6, 557966.0, 1.46127e6, 6.23872e6, 24368.4, -24368.4, -14567.7, -9040.55, 46731.1, 36536.2};
@@ -16,6 +20,7 @@ const std::vector<double> up = {9998.4,    0.0107047, 9998.69,    9998.73,   0.1
 }
 
 namespace SMOKE_PROBLEM_BASELINE {
+//solution
 const std::vector<double> x = {-10.00553000112996, 0.01070470000195201, -0.01070469967089594, 9.994825300178494, 0.01070470036938787,
                         0.01070469990372658, -0.9892949999994021, 9.99789335764945e-08, 50.00000000000912, 50.00000000000366,
                         -9.989889804273847e-09, 9.989889804273847e-09};
@@ -26,8 +31,16 @@ const std::vector<double> dualU = {0.0, 13162.68929529999, 0.0, 0.0, 0.0, 0.0, 0
 const double cost = -17299352.22259864;
 const std::size_t nIterations = 12;
 }
+double GetMachineEps() {
+    double eps = 1.0;
+    while (eps + 1.0 > 1.0) {
+        eps *= 0.5;
+    }
+    return 2 * eps;
+}
 
 int main() {
+    // check correctness of input and baseline data
     const std::size_t nVariables = 12;
     assert(SMOKE_PROBLEM::c.size() == nVariables);
     assert(SMOKE_PROBLEM::lw.size() == nVariables);
@@ -47,6 +60,7 @@ int main() {
     for (const auto& constraint: SMOKE_PROBLEM::A) {
         assert(constraint.size() == nVariables);
     }
+    // initialize problem
     QP_NNLS::DenseQPProblem nnlsProblem;
     nnlsProblem.H = SMOKE_PROBLEM::H;
     nnlsProblem.A = SMOKE_PROBLEM::A;
@@ -54,11 +68,20 @@ int main() {
     nnlsProblem.b = SMOKE_PROBLEM::b;
     nnlsProblem.lw = SMOKE_PROBLEM::lw;
     nnlsProblem.up = SMOKE_PROBLEM::up;
-    nnlsProblem.nEqConstraints = 1;
-    QP_NNLS::Settings settings; // default settings
-    QP_NNLS::QPNNLSDense solver;
-    solver.Init(settings);
-    std::string initMsg;
+    nnlsProblem.nEqConstraints = 1; // first nEqConstraints rows in A are equality constraints
+    QP_NNLS::Settings settings;     // default settings
+    QP_NNLS::QPNNLSDense solver;    // create solver instance
+    solver.Init(settings);          // apply settings
+    // set problem
+    // method SetProblem() preprocesses the input problem.
+    // Returns true if all the preprocessing procedures passed without numerical problems, false otherwise
+    // If SetProblem() returns "true" the properties of the problem can be seen using method GetInitStatus()
+    // QP_NNLS::InitStageStatus initStatus = solver.GetInitStatus()
+    // "SUCCESS" means that problem has positive definite H
+    // "D_Z" means positive semidefinite
+    // "D_ZN" or "D_N"  - indefinite or negative definite
+    // Solver can't solve indefinite or negative definite problems but can solve positive semidefinite problems,
+    // in this case H correction will take place
     if (!solver.SetProblem(nnlsProblem)) {
         QP_NNLS::InitStageStatus initStatus = solver.GetInitStatus();
         if (initStatus == QP_NNLS::InitStageStatus::D_Z) {
@@ -86,7 +109,8 @@ int main() {
     } else {
         abort();
     }
-    const double eps = 1.0e-8;
+    // check output
+    const double eps = sqrt(GetMachineEps());
     if (success) {
         if ((std::fabs(nnlsOutput.cost - SMOKE_PROBLEM_BASELINE::cost) >= eps) ||
             nnlsOutput.nDualIterations != SMOKE_PROBLEM_BASELINE::nIterations) {
