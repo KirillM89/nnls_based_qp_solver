@@ -32,7 +32,7 @@ struct LinSolverOutput {
     bool emptyInput = false;
     unsg_t nDNegative = std::numeric_limits<unsg_t>::max(); // number of d<=0 in LDLT
     std::vector<double> solution;
-    std::list<unsg_t>  indices;
+    std::list<unsg_t> indices;
 };
 
 struct ActiveSetUpdateSettings {
