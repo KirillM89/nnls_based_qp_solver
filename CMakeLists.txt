@@ -28,6 +28,18 @@ target_sources(${PROJECT_NAME} PUBLIC
 )
 add_executable(smoke)
 set_property(TARGET smoke PROPERTY CXX_STANDARD 20)
-target_sources(smoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/smoke/main.cpp)
+target_sources(smoke PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/smoke/main.cpp
+)
 target_link_libraries(smoke PRIVATE ${PROJECT_NAME})
 target_include_directories(smoke PRIVATE ${SRC_DIR})
+
+add_executable(examples)
+set_property(TARGET examples PROPERTY CXX_STANDARD 20)
+target_sources(examples PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/tools.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/tools.cpp)
+target_link_libraries(examples PRIVATE ${PROJECT_NAME})
+target_include_directories(examples PRIVATE ${SRC_DIR})
+

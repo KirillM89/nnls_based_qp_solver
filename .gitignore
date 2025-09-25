@@ -2,8 +2,8 @@
 !/src
 !/public
 !/smoke
+!/examples
 !/CMakeLists.txt
 !/README.md
 !/LICENSE
 !/.gitignore
-

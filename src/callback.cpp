@@ -31,7 +31,7 @@ void Callback1::ProcessData(int stage) {
             logger->message("scale factor DB", initData.scaleDB);
         }
         if(logLevel >= 3u) {
-            logger->dump("Choletsky", *initData.Chol);
+
             logger->dump("CholetskyInv", *initData.CholInv);
             logger->dump("Matrix M", *initData.M);
             logger->dump("vector s", *initData.s);
@@ -66,12 +66,13 @@ void Callback1::ProcessData(int stage) {
             logger->message("convergence");
         }
         if (finalData.dualStatus != DualLoopExitStatus::INFEASIBILITY) {
-           logger->dump("x", finalData.x);
+           logger->dump("x", *finalData.x);
            logger->message("cost", finalData.cost);
            logger->dump("lambda", *finalData.lambda);
            logger->dump("lambdaLw", *finalData.lambdaLw);
            logger->dump("lambdaUp", *finalData.lambdaUp);
         }
+        logger->message("lin.system time: iter number/ n variables / time mus ");
         for (std::size_t i = 0; i < finalData.linSlvrTimes->size(); ++i) {
             logger->message(i, "n", (*finalData.linSlvrTimes)[i].nConstraints, "t", (*finalData.linSlvrTimes)[i].us);
         }
