@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include "decorators.h"
 
 namespace SMOKE_PROBLEM {

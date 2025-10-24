@@ -5,8 +5,10 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <set>
+#include <limits>
 #include "types.h"
 namespace QP_NNLS {
+    double g_GetMachineEps();
 
     void Mult(const matrix_t& M1, const matrix_t& M2, matrix_t& mult); // M1 * M2
 

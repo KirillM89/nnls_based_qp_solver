@@ -1,6 +1,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 #include "core.h"
 #define BTOL 1.0e10
 

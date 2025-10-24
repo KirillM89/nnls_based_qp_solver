@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include "decorators.h"
 #include "tools.h"
 

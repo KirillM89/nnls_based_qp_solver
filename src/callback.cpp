@@ -1,11 +1,13 @@
 #include "callback.h"
+#include "log.h"
 namespace QP_NNLS {
 Callback1::Callback1(const std::string& filePath):
     filePath(filePath),
     logger(std::make_unique<Logger>()),
     logLevel(0u)
 { }
-
+Callback1::~Callback1()
+{}
 void Callback1::Init() {
     if (logLevel > 0u) {
         logger->SetFile(filePath);
