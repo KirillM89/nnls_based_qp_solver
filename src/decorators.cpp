@@ -3,43 +3,37 @@
 namespace QP_NNLS {
 
     QPNNLS::QPNNLS():
-        core(std::make_unique<Core>()),
-        isInitialized(false)
-    { }
-    QPNNLS::~QPNNLS() = default;
-
-    void QPNNLS::Init(const Settings& settings, bool verify) {
-        if (verify) {
-            isInitialized = VerifySettings(settings);
-        } else {
-            isInitialized = true;
-        }
-        if (isInitialized) {
-            core->Set(settings);
+        isInitialized(false),
+        core(new Core())
+    {}
+    QPNNLS::~QPNNLS()
+    {
+        delete core;
+    }
+    void QPNNLS::Init(const Configuration& config) {
+        core->Set(config);
+        isInitialized = true;
+    }
+    void QPNNLS::SetCallback(Callback* callback) {
+        if (callback) {
+            core->SetCallback(callback);
         }
     }
-    void QPNNLS::SetCallback(std::unique_ptr<Callback> callback) {
-        core->SetCallback(std::move(callback));
-    }
-    const SolverOutput& QPNNLS::GetOutput() {
-        output = core->GetOutput();
-        return output;
+    const Output& QPNNLS::GetOutput() {
+        return (output = core->GetOutput());
     }   
-    bool QPNNLS::VerifySettings(const Settings& settings) {
-        //TODO
-        return true;
-    }
-    bool QPNNLSDense::SetProblem(const DenseQPProblem& problem) {
+    bool QPNNLS::SetProblem(const Input& problem) {
         if (!isInitialized) {
             return false;
         }
         return core->InitProblem(problem);
     }
-    void QPNNLSDense::Solve() {
+    void QPNNLS::Solve() {
         core->Solve();
     }
-    InitStageStatus QPNNLSDense::GetInitStatus() {
-        return core->GetInitStatus();
+    unsigned char QPNNLS::GetInitStatus() {
+        InitStageStatus coreInitStatus = core->GetInitStatus();
+        return static_cast<unsigned char>(coreInitStatus);
     }
 
 

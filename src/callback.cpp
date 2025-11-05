@@ -3,11 +3,13 @@
 namespace QP_NNLS {
 Callback1::Callback1(const std::string& filePath):
     filePath(filePath),
-    logger(std::make_unique<Logger>()),
+    logger(new Logger()),
     logLevel(0u)
 { }
 Callback1::~Callback1()
-{}
+{
+    delete logger;
+}
 void Callback1::Init() {
     if (logLevel > 0u) {
         logger->SetFile(filePath);
@@ -49,35 +51,35 @@ void Callback1::ProcessData(int stage) {
         }
         if (logLevel >= 3u) {
             logger->dump("active set", *iterData.activeSet);
-            logger->dump("history", *iterData.activeSetHistory);
             logger->dump("zp", *iterData.zp);
             logger->dump("primal", *iterData.primal);
             logger->dump("dual", *iterData.dual);
         }
     }  else if (stage == 3) { // dump final data for any log level > 0
         logger->SetStage("RESULTS");
-        if (finalData.dualStatus == DualLoopExitStatus::INFEASIBILITY) {
+
+        if (finalData.dualStatus == 3) {
             logger->message("infeasibility");
-        } else if (finalData.dualStatus == DualLoopExitStatus::ALL_DUAL_POSITIVE) {
+        } else if (finalData.dualStatus == 0) {
             logger->message("all dual gt tolerance");
-        } else if (finalData.dualStatus == DualLoopExitStatus::FULL_ACTIVE_SET) {
+        } else if (finalData.dualStatus == 1) {
             logger->message("full active set");
-        } else if (finalData.dualStatus == DualLoopExitStatus::ITERATIONS) {
+        } else if (finalData.dualStatus == 2) {
             logger->message("iterations limit exceeded");
         } else {
             logger->message("convergence");
         }
-        if (finalData.dualStatus != DualLoopExitStatus::INFEASIBILITY) {
+        if (finalData.dualStatus != 3) {
            logger->dump("x", *finalData.x);
            logger->message("cost", finalData.cost);
            logger->dump("lambda", *finalData.lambda);
            logger->dump("lambdaLw", *finalData.lambdaLw);
            logger->dump("lambdaUp", *finalData.lambdaUp);
         }
-        logger->message("lin.system time: iter number/ n variables / time mus ");
-        for (std::size_t i = 0; i < finalData.linSlvrTimes->size(); ++i) {
-            logger->message(i, "n", (*finalData.linSlvrTimes)[i].nConstraints, "t", (*finalData.linSlvrTimes)[i].us);
-        }
+       // logger->message("lin.system time: iter number/ n variables / time mus ");
+       // for (std::size_t i = 0; i < finalData.linSlvrTimes->size(); ++i) {
+       //     logger->message(i, "n", (*finalData.linSlvrTimes)[i].nConstraints, "t", (*finalData.linSlvrTimes)[i].us);
+       // }
     }
 }
 } // namespace QP_NNLS

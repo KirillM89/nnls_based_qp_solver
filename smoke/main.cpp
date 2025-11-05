@@ -62,7 +62,7 @@ int main() {
         assert(constraint.size() == nVariables);
     }
     // initialize problem
-    QP_NNLS::DenseQPProblem nnlsProblem;
+    QP_NNLS::Input nnlsProblem;
     nnlsProblem.H = SMOKE_PROBLEM::H;
     nnlsProblem.A = SMOKE_PROBLEM::A;
     nnlsProblem.c = SMOKE_PROBLEM::c;
@@ -70,9 +70,9 @@ int main() {
     nnlsProblem.lw = SMOKE_PROBLEM::lw;
     nnlsProblem.up = SMOKE_PROBLEM::up;
     nnlsProblem.nEqConstraints = 1; // first nEqConstraints rows in A are equality constraints
-    QP_NNLS::Settings settings;     // default settings
-    QP_NNLS::QPNNLSDense solver;    // create solver instance
-    solver.Init(settings);          // apply settings
+    QP_NNLS::Configuration config;     // default settings
+    QP_NNLS::QPNNLS solver;    // create solver instance
+    solver.Init(config);          // apply settings
     // set problem
     // method SetProblem() preprocesses the input problem.
     // Returns true if all the preprocessing procedures passed without numerical problems, false otherwise
@@ -85,28 +85,28 @@ int main() {
     // in this case H correction will take place
     std::string initMsg;
     if (!solver.SetProblem(nnlsProblem)) {
-        QP_NNLS::InitStageStatus initStatus = solver.GetInitStatus();
-        if (initStatus == QP_NNLS::InitStageStatus::D_Z) {
+        unsigned char initStatus = solver.GetInitStatus();
+        if (initStatus == 1) {
             initMsg = "LDLT: zero D components";
-        } else if (initStatus == QP_NNLS::InitStageStatus::D_N) {
+        } else if (initStatus == 2) {
             initMsg = "LDLT: negative D components";
-        } else if (initStatus == QP_NNLS::InitStageStatus::D_ZN) {
+        } else if (initStatus == 3) {
             initMsg = "LDLT: zero and negative D components";
         }
         std::cout << initMsg << std::endl;
         return 1;
     }
     solver.Solve();
-    QP_NNLS::SolverOutput nnlsOutput = solver.GetOutput();
+    QP_NNLS::Output nnlsOutput = solver.GetOutput();
     bool success = true;
-    if (nnlsOutput.dualExitStatus == QP_NNLS::DualLoopExitStatus::INFEASIBILITY) {
+    if (nnlsOutput.dualExitStatus == 3) {
         std::cout << "infeasibility" << std::endl;
         success = false;
-    } else if (nnlsOutput.dualExitStatus == QP_NNLS::DualLoopExitStatus::ITERATIONS) {
+    } else if (nnlsOutput.dualExitStatus == 2) {
         std::cout << "iterations" << std::endl;
-    } else if (nnlsOutput.dualExitStatus == QP_NNLS::DualLoopExitStatus::ALL_DUAL_POSITIVE)  {
+    } else if (nnlsOutput.dualExitStatus == 0)  {
         std::cout << "all dual positive" << std::endl;
-    } else if (nnlsOutput.dualExitStatus == QP_NNLS::DualLoopExitStatus::FULL_ACTIVE_SET) {
+    } else if (nnlsOutput.dualExitStatus == 1) {
         std::cout <<  "full active set" << std::endl;
     } else {
         abort();
@@ -115,7 +115,7 @@ int main() {
     const double eps = sqrt(GetMachineEps());
     if (success) {
         if ((std::fabs(nnlsOutput.cost - SMOKE_PROBLEM_BASELINE::cost) >= eps) ||
-            nnlsOutput.nDualIterations != SMOKE_PROBLEM_BASELINE::nIterations) {
+            nnlsOutput.nIterations != SMOKE_PROBLEM_BASELINE::nIterations) {
             std::cout << "FAILED" << std::endl;
             return 1;
         }

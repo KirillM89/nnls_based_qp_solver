@@ -1,6 +1,6 @@
 #ifndef LINSOLVERS_H
 #define LINSOLVERS_H
-#include "types.h"
+#include "core_types.h"
 #include "utils.h"
 namespace QP_NNLS {
 class ILinSolver {

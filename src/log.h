@@ -5,6 +5,8 @@
 #include <type_traits>
 #include <iomanip>
 #include <set>
+#include <unordered_set>
+#include <deque>
 #include "types.h"
 #define CPP_FORMAT
 namespace QP_NNLS {

@@ -2,87 +2,87 @@
 #define NNLS_CORE_H
 #include <memory>
 #include <map>
-#include "types.h"
+#include "core_types.h"
 #include "linSolvers.h"
 #include "timers.h"
 #include "callback.h"
 namespace QP_NNLS {
-
 class Core {
     struct WorkSpace {
         // na - number of constraints
         // nv - number of variables
         // nc = na + 2 * nv
         // total size = nc x nv + 8 * nc + 3 * nv ~ na * nv + 2 * nv^2
-        std::vector<double> s;      // nc
-        std::vector<double> zp;     // nc
-        std::vector<double> primal; // nc
-        std::vector<double> dual;   // nc
-        std::vector<double> lambda; // nc
-        std::vector<double> aux;    // nc
-        std::vector<double> x;      // nv
-        std::vector<double> v;      // nv
-        std::vector<double> Chol;   // nv
+        std::vector<fp_t> s;      // nc
+        std::vector<fp_t> zp;     // nc
+        std::vector<fp_t> primal; // nc
+        std::vector<fp_t> dual;   // nc
+        std::vector<fp_t> lambda; // nc
+        std::vector<fp_t> aux;    // nc
+        std::vector<fp_t> x;      // nv
+        std::vector<fp_t> v;      // nv
+        std::vector<fp_t> Chol;   // nv
         std::vector<bool> dCorrected; // nv
-        std::set<unsigned int> activeConstraints;    // max nc
-        std::set<unsigned int> linEqConstraints;     // max nc - 2 * nv
-        std::unordered_set<unsigned int> negativeZp; // max nc
+        std::set<unsg_t> activeConstraints;    // max nc
+        std::set<unsg_t> linEqConstraints;     // max nc - 2 * nv
+        std::unordered_set<unsg_t> negativeZp; // max nc
         matrix_t M;  // nc x nv
         std::deque<unsg_t> addHistory;
-    };
-
-    enum PrimalRetStatus {
-        SINGULARITY = 0x01,
-        LINE_SEARCH_FAILED = 0x02
     };
 
 public:
     Core();
     ~Core() = default;
-    void Set(const CoreSettings& settings);
+    void Set(const Configuration& config);
     void ResetProblem();
-    void SetCallback(std::unique_ptr<Callback> callback);
-    bool InitProblem(const DenseQPProblem& problem);
+    void SetCallback(Callback* callback);
+    bool InitProblem(const Input& problem);
     void Solve();
-    const SolverOutput& GetOutput() { return output; }
+    const Output& GetOutput() { return output; }
     InitStageStatus GetInitStatus() { return initStatus; }
 private:
-    unsg_t nVariables;
-    unsg_t nConstraints;
-    unsg_t nPVariables;
-    unsg_t nPConstraints;
-    unsg_t nEqConstraints;
-    unsg_t newActiveIndex;
-    unsg_t rptInterval;
+    enum LinSolverStatus {
+        SINGULARITY = 0x01,
+        LINE_SEARCH_FAILED = 0x02,
+    };
+    unsg_t nVariables = 0;
+    unsg_t nConstraints = 0;
+    unsg_t nPVariables = 0;
+    unsg_t nPConstraints = 0;
+    unsg_t nEqConstraints = 0;
+    unsg_t newActiveIndex = 0;
+    unsg_t rptInterval = 0;
+    unsg_t nDualIterations = 0;
+    unsg_t nPrimalIterations = 1000;
     std::unordered_set<unsg_t> singularIndices;
-    unsg_t dualIteration;
-    unsg_t primalIteration;
+    unsg_t dualIteration = 0;
+    unsg_t primalIteration = 0;
     DualLoopExitStatus dualExitStatus;
     PrimalLoopExitStatus primalExitStatus;
-    double mEps;
-    double minEl;
-    double gamma;
-    double gammaCorrection;
-    double styGamma;
-    double scaleFactorDB;
-    double rsNorm;
-    double newActive;
-    double dualTolerance;
-    double cost;
-    CoreSettings settings;
+    fp_t mEps;
+    fp_t minEl;
+    fp_t gamma;
+    fp_t gammaCorrection;
+    fp_t styGamma;
+    fp_t scaleFactorDB;
+    fp_t rsNorm;
+    fp_t newActive;
+    fp_t dualTolerance;
+    fp_t cost;
+    Configuration config;
     WorkSpace ws;
     std::unique_ptr<iTimer> timer;
-    std::unique_ptr<Callback> uCallback;
+    Callback* uCallback = nullptr;
     std::unique_ptr<ILinSolver> lSolver;
-    SolverOutput output;
+    Output output;
     InitStageStatus initStatus;
     std::vector<LinSolverTime> linSolverTimes;
-    bool PrepareNNLS(const DenseQPProblem& problem);
+    bool PrepareNNLS(const Input& problem);
     bool OrigInfeasible();
     bool FullActiveSet();
     bool SkipCandidate(unsg_t indx);
     bool MakeLineSearch();
-    bool IsCandidateForNewActive(unsg_t index, double toCompare, bool skip = true);
+    bool IsCandidateForNewActive(unsg_t index, fp_t toCompare, bool skip = true);
     void TimeInterval(std::string& buf);
     void UnscaleD();
     void ComputeDualVariable();
@@ -92,17 +92,17 @@ private:
     void RmvFromActiveSet(unsg_t indx);
     void ComputeOrigSolution();
     void FillOutput();
-    void SetInitData(const DenseQPProblem &problem);
+    void SetInitData(const Input &problem);
     void SetLinearSolver();
     void SetIterationData();
     void SetFinalData();
     void AllocateWs();
     void UpdateScaleFactor(std::size_t iConstraint);
-    void AddExtraComponent(unsg_t indx, double bound, int& status);
-    void ComputeLS4Constraints(const matrix_t& ld, const DenseQPProblem& problem);
-    void ComputeLS4Bounds(const DenseQPProblem& problem);
+    void AddExtraComponent(unsg_t indx, fp_t bound, int& status);
+    void ComputeLS4Constraints(const matrix_t& ld, const Input& problem);
+    void ComputeLS4Bounds(const Input& problem);
     void Scale();
-    void Init(const DenseQPProblem& problem);
+    void Init(const Input& problem);
     matrix_t ComputeLDLT(const matrix_t& H);
     unsg_t SelectNewActiveComponent();
     unsg_t SolvePrimal();

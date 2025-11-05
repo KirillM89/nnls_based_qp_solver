@@ -20,6 +20,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${SRC_DIR}/utils.h
     ${SRC_DIR}/linSolvers.h
     ${SRC_DIR}/core.h
+    ${SRC_DIR}/core_types.h
 )
 target_sources(${PROJECT_NAME} PUBLIC
     ${PUB_DIR}/decorators.h

@@ -7,49 +7,43 @@
 
 namespace QP_NNLS {
 Core::Core():
-    timer(std::make_unique<wcTimer>()),     //wall-clock timer
-    uCallback(std::make_unique<Callback>()) //stub
-{
-    settings = CoreSettings();
-}
+    timer(std::make_unique<wcTimer>()) //wall-clock timer
+{}
 
-void Core::Init(const DenseQPProblem& problem) {
+void Core::Init(const Input& problem) {
     nPVariables = static_cast<unsg_t>(problem.H.size());
     nPConstraints = static_cast<unsg_t>(problem.A.size());
-    nEqConstraints = static_cast<unsg_t>(problem.nEqConstraints);
-    if (settings.largeBoundsPenalty) {
-        nVariables = nPVariables + 1;
-        nConstraints = nPConstraints + 2 * nPVariables + 1;
-    } else {
-        nVariables = nPVariables;
-        nConstraints = nPConstraints + 2 * nPVariables;
+    nEqConstraints = problem.nEqConstraints;
+    nVariables = nPVariables;
+    nConstraints = nPConstraints + 2 * nPVariables;
+    if (config.largeBoundsPenalty) {
+        nPVariables += 1;
+        nConstraints += 1;
     }
     linSolverTimes.clear();
     mEps = g_GetMachineEps();
     minEl = 10.0 * sqrt(mEps);
     scaleFactorDB = 1.0;
     initStatus = InitStageStatus::SUCCESS;
-    output.mDef = 0;
-    settings.nDualIterations = std::max(settings.nDualIterations,
-                                        static_cast<unsg_t>((2 * nPVariables + nPConstraints) * 1.5));
+    nDualIterations = static_cast<unsg_t>((2 * nPVariables + nPConstraints) * 1.5);
     gamma = 1.0;
     singularIndices.clear();
 }
-void Core::Set(const CoreSettings& settings) {
-    this->settings = settings;
+void Core::Set(const Configuration& config) {
+    this->config = config;
 }
-void Core::SetCallback(std::unique_ptr<Callback> callback) {
-    if (callback != nullptr) {
-        uCallback = std::move(callback);
-    }
+void Core::SetCallback(Callback* callback) {
+    uCallback = callback;
 }
-bool Core::InitProblem(const DenseQPProblem &problem) {
+bool Core::InitProblem(const Input &problem) {
     if (!PrepareNNLS(problem)) {
         return false;
     }
-    uCallback->SetLogLevel(settings.logLevel);
-    uCallback->Init();
-    linSolverTimes.reserve(settings.nDualIterations);
+    if (uCallback) {
+        uCallback->SetLogLevel(config.logLevel);
+        uCallback->Init();
+    }
+    linSolverTimes.reserve(nDualIterations);
     SetInitData(problem);
     return true;
 }
@@ -96,7 +90,7 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
     const bool inPlaceDZeroCor = false;
     unsigned char rStat  = InPlaceLdlt(ld, pmt, nZr, nNg, true, inPlaceDZeroCor);
     //continue if D has only positive values or zero values with option zeroDCor==true
-    if ((rStat == 1u && !settings.zeroDCor) || rStat > 1u) {
+    if ((rStat == 1u && !config.posDefCorrection) || rStat > 1u) {
         if (rStat == 1u) {
             initStatus = InitStageStatus::D_Z;
         } else if (rStat == 2u) {
@@ -105,17 +99,18 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
             initStatus = InitStageStatus::D_ZN;
         }
     } else {
-        if (settings.checkFactorization) {       
-            CheckFactorization(ld, H, pmt);
-        }
+       // if (settings.checkFactorization) {
+       //     CheckFactorization(ld, H, pmt);
+       // }
+        output.isPositiveDefinite = false;
         const double minChol = 2.0 * mEps; // min diagonal value
         const double maxCondNumInv = sqrt(mEps);
         const double maxEgVal = ld[0][0];
         const double minEgVal = maxCondNumInv * maxEgVal;
         for (unsg_t v = 0; v < nV; ++v) {
-            if (settings.zeroDCor && ld[v][v] < minEgVal) {  // replace all values which violate condition number
-                ld[v][v] = std::fmax(minChol, maxCondNumInv *  maxEgVal);  // (CondNum / maxCondNum) * minEgVal = (maxEgVal / (minEgVal * maxCondNum)) * minEgVal = maxEgVal / maxCondNum
-                output.mDef = 1;
+            if (config.posDefCorrection && ld[v][v] < minEgVal) {  // replace all values which violate condition number
+                ld[v][v] = std::fmax(minChol, maxCondNumInv *  minEgVal);  // (CondNum / maxCondNum) * minEgVal = (maxEgVal / (minEgVal * maxCondNum)) * minEgVal = maxEgVal / maxCondNum
+                output.isPositiveDefinite = false;
                 ws.dCorrected[v] = true;
             }
             ws.Chol[v] = 1.0 / sqrt(ld[v][v]);
@@ -131,14 +126,14 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
     }
     return ld;
 }
-void Core::ComputeLS4Constraints(const matrix_t& ld,  const DenseQPProblem& problem) {
-    const std::size_t nV = settings.largeBoundsPenalty ? nVariables - 1 : nVariables;
-    const std::size_t nC = settings.largeBoundsPenalty ? nConstraints -  2 * nV - 1 : nConstraints - 2 * nV;
+void Core::ComputeLS4Constraints(const matrix_t& ld,  const Input& problem) {
+    const std::size_t nV = config.largeBoundsPenalty ? nVariables - 1 : nVariables;
+    const std::size_t nC = config.largeBoundsPenalty ? nConstraints -  2 * nV - 1 : nConstraints - 2 * nV;
     for (std::size_t c = 0; c < nC; ++c) {
         double b = problem.b[c];
         int stat = 1;
         bool scale = false;
-        if (settings.largeBoundsPenalty) {
+        if (config.largeBoundsPenalty) {
             AddExtraComponent(c, b, stat);
         } else {
             if (b < -BTOL) {
@@ -172,9 +167,9 @@ void Core::ComputeLS4Constraints(const matrix_t& ld,  const DenseQPProblem& prob
         UpdateScaleFactor(c);
     }
 }
-void Core::ComputeLS4Bounds(const DenseQPProblem& problem) {
-    const std::size_t nV = settings.largeBoundsPenalty ? nVariables - 1 : nVariables;
-    const std::size_t nC = settings.largeBoundsPenalty ? nConstraints -  2 * nV - 1 : nConstraints - 2 * nV;
+void Core::ComputeLS4Bounds(const Input& problem) {
+    const std::size_t nV = config.largeBoundsPenalty ? nVariables - 1 : nVariables;
+    const std::size_t nC = config.largeBoundsPenalty ? nConstraints -  2 * nV - 1 : nConstraints - 2 * nV;
     for (unsg_t c = 0; c < nV; ++c) {
         bool scaleU = false;
         bool scaleL = false;
@@ -183,7 +178,7 @@ void Core::ComputeLS4Bounds(const DenseQPProblem& problem) {
         double bLw = -problem.lw[c];
         const std::size_t iBnd = nC + 2 * c;
         int statUp = 1, statLw = 1;
-        if (settings.largeBoundsPenalty ) {
+        if (config.largeBoundsPenalty) {
             AddExtraComponent(iBnd, bUp, statUp);
             AddExtraComponent(iBnd + 1, bLw, statLw);
         } else {
@@ -223,7 +218,7 @@ void Core::Scale() {
         //scaleFactorDB = 10. * mEps;
     }
     scaleFactorDB = sqrt(scaleFactorDB);
-    settings.origPrimalFsb *= scaleFactorDB;
+    config.origPrimalFsb *= scaleFactorDB;
     const double minS = g_GetMachineEps();
     //s scaling and ortogonalization
     for (std::size_t r = 0; r < nConstraints; ++r) {
@@ -259,7 +254,7 @@ void Core::AllocateWs() {
     ws.x = std::vector<double>(nVariables, 0.0);            // primal vars for orig problem
     ws.v = std::vector<double>(nVariables, 0.0);            // vector v = L_-1 * c
     ws.Chol = std::vector<double>(nVariables, 1.0);         // invert Choletsky factor
-    if (settings.zeroDCor) {
+    if (config.posDefCorrection) {
         ws.dCorrected = std::vector<bool>(nVariables, false);
     }
     ws.M = matrix_t(nConstraints, std::vector<double>(nVariables, 0.0)); // M = A * L_-1
@@ -271,7 +266,7 @@ void Core::AllocateWs() {
     }
 }
 
-bool Core::PrepareNNLS(const DenseQPProblem &problem) {
+bool Core::PrepareNNLS(const Input &problem) {
     Init(problem);
     AllocateWs();
     timer->Start();
@@ -281,11 +276,13 @@ bool Core::PrepareNNLS(const DenseQPProblem &problem) {
     }
     ComputeLS4Constraints(ld, problem);
     ComputeLS4Bounds(problem);
-    if (settings.largeBoundsPenalty) {
+    if (config.largeBoundsPenalty) {
         ws.M.back().back() = -1.0;
     }
     Scale();
-    TimeInterval(uCallback->initData.tM);
+    if (uCallback) {
+        TimeInterval(uCallback->initData.tM);
+    }
     SetLinearSolver();
     for (auto indx : ws.linEqConstraints) {
         AddToActiveSet(indx);
@@ -347,7 +344,7 @@ bool Core::OrigInfeasible() {
     MultTransp(ws.M, ws.primal, ws.activeConstraints, ws.x); // M_T * primal
     styGamma = gamma + DotProduct(ws.s, ws.primal, ws.activeConstraints);
     rsNorm = DotProduct(ws.x, ws.x) + styGamma * styGamma;
-    return rsNorm < settings.nnlsResidNormFsb;
+    return rsNorm < config.nnlsResidNormFsb;
 }
 
 bool Core::FullActiveSet() {
@@ -360,7 +357,7 @@ void Core::ComputeDualVariable() {
     }
 }
 bool Core::SkipCandidate(unsg_t indx) {
-    if (settings.rejectSingular && singularIndices.find(indx) != singularIndices.end()) {
+    if (config.rejectSingular && singularIndices.find(indx) != singularIndices.end()) {
         return true;
     } else {
         return false;
@@ -407,21 +404,21 @@ unsg_t Core::SelectNewActiveComponent() {
 unsg_t Core::SolvePrimal() {
     timer->Ticks();
     const std::size_t nActive = ws.activeConstraints.size();
-    lSolver->Set(settings.rejectSingular);
+    lSolver->Set(config.rejectSingular);
     lSolver->SetGamma(gamma);
-    const LinSolverOutput& output = lSolver->Solve();
-    assert(output.indices.size() == ws.activeConstraints.size());
-    for (auto indx : output.indices) {
+    const LinSolverOutput& lsOutput = lSolver->Solve();
+    assert(lsOutput.indices.size() == ws.activeConstraints.size());
+    for (auto indx : lsOutput.indices) {
         assert(ws.activeConstraints.find(indx) != ws.activeConstraints.end());
     }
     std::fill(ws.zp.begin(), ws.zp.end(), 0.0);
-    if (output.nDNegative == 0 || !settings.rejectSingular) {
+    if (lsOutput.nDNegative == 0 || !config.rejectSingular) {
         ws.negativeZp.clear();
         std::size_t i = 0;
         if (nActive > 0) {
-            for (auto indx: output.indices) {
-                ws.zp[indx] = output.solution[i];
-                if (indx >= nEqConstraints && ws.zp[indx] <= settings.nnlsPrimalZero) {
+            for (auto indx: lsOutput.indices) {
+                ws.zp[indx] = lsOutput.solution[i];
+                if (indx >= nEqConstraints && ws.zp[indx] <= 1.0e-30) {
                     ws.negativeZp.insert(indx);
                 }
                 ++i;
@@ -432,7 +429,7 @@ unsg_t Core::SolvePrimal() {
     linSolverTimes.back().us = timer->Ticks();
     linSolverTimes.back().nConstraints = nActive;
     // TODO: check quality
-    return output.nDNegative;
+    return lsOutput.nDNegative;
 }
 
 bool Core::MakeLineSearch() {
@@ -478,7 +475,7 @@ bool Core::MakeLineSearch() {
                 }
             }
             //remove constraints corresponding to zero or neg primal from active set
-            if (ws.primal[i] <= settings.prLtZero) {
+            if (ws.primal[i] <= 1.0e-30) {
                 if (i >= nEqConstraints) {
                     if (ws.activeConstraints.find(i) != ws.activeConstraints.end()) {
                         gammaCorrection += std::fabs(ws.s[i]);
@@ -499,7 +496,7 @@ int Core::UpdatePrimal() {
     if (SolvePrimal() > 0) {
         res |= SINGULARITY;
     }
-    if (res == 0 || !settings.rejectSingular) {
+    if (res == 0 || !config.rejectSingular) {
         if (!ws.negativeZp.empty()) {
             singularIndices.clear();
             if (!MakeLineSearch()) {
@@ -514,16 +511,16 @@ int Core::UpdatePrimal() {
 
 void Core::UnscaleD() {
     if (scaleFactorDB < 1.0) {
-        settings.origPrimalFsb /= scaleFactorDB;
+        config.origPrimalFsb /= scaleFactorDB;
     }
 }
 void Core::UpdateGammaOnPrimalIteration() {
-    if (settings.gammaUpdate == true) {
+    if (config.gammaUpdate == true) {
         gamma = std::fabs(gamma - gammaCorrection);
     }
 }
 void Core::UpdateGammaOnDualIteration() {
-    if (settings.gammaUpdate == true) {
+    if (config.gammaUpdate == true) {
         gamma += std::fabs(ws.s[newActiveIndex]);
     }
 }
@@ -565,11 +562,8 @@ void Core::ComputeOrigSolution() {
 
 
 void Core::FillOutput() {
-    output.dualExitStatus = dualExitStatus;
-    output.primalExitStatus = primalExitStatus;
-    output.nVariables = nPVariables;
-    output.nConstraints = nPConstraints;
-    output.nEqConstraints = nEqConstraints;
+    output.dualExitStatus = static_cast<unsigned char>(dualExitStatus);
+    output.primalExitStatus = static_cast<unsigned char>(primalExitStatus);
     if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY){
         output.x = std::vector<double>(ws.x.begin(), ws.x.begin() + nPVariables);
         output.lambda.resize(nPConstraints, 0.0);
@@ -584,16 +578,16 @@ void Core::FillOutput() {
         }
         output.cost = cost;
     }
-    output.nDualIterations = dualIteration;
+    output.nIterations = dualIteration;
 }
-void Core::SetInitData(const DenseQPProblem &problem) {
-    if (settings.logLevel >= 1u) {
+void Core::SetInitData(const Input &problem) {
+    if (config.logLevel >= 1u) {
         uCallback->initData.nVariables= nPVariables;
         uCallback->initData.nConstraints = nPConstraints;
         uCallback->initData.nEqConstraints = nEqConstraints;
-        if (settings.logLevel >= 2u) {
+        if (config.logLevel >= 2u) {
             uCallback->initData.scaleDB = scaleFactorDB;
-            if (settings.logLevel >= 3u) {
+            if (config.logLevel >= 3u) {
                 uCallback->initData.Chol = &ws.Chol;
                 uCallback->initData.CholInv = &ws.Chol;
                 uCallback->initData.M = &ws.M;
@@ -606,15 +600,14 @@ void Core::SetInitData(const DenseQPProblem &problem) {
     }
 }
 void Core::SetIterationData() {
-    if (settings.logLevel >= 2u) {
+    if (config.logLevel >= 2u) {
         uCallback->iterData.iteration = dualIteration;
         uCallback->iterData.newIndex = newActiveIndex;
         uCallback->iterData.gamma = gamma;
         uCallback->iterData.dualTol = dualTolerance;
         uCallback->iterData.rsNorm = rsNorm;
-        if (settings.logLevel >= 3u) {
+        if (config.logLevel >= 3u) {
             uCallback->iterData.activeSet = &ws.activeConstraints;
-            uCallback->iterData.activeSetHistory = &ws.addHistory;
             uCallback->iterData.primal = &ws.primal;
             uCallback->iterData.dual = &ws.dual;
             uCallback->iterData.zp = &ws.zp;
@@ -624,11 +617,10 @@ void Core::SetIterationData() {
 }
 
 void Core::SetFinalData() {
-    if (settings.logLevel >= 1u) {
-        uCallback->finalData.dualStatus = dualExitStatus;
-        uCallback->finalData.primalStatus = primalExitStatus;
-        uCallback->finalData.nIterations = output.nDualIterations;
-        uCallback->finalData.linSlvrTimes = &linSolverTimes;
+    if (config.logLevel >= 1u) {
+        uCallback->finalData.dualStatus = static_cast<unsigned char>(dualExitStatus);
+        uCallback->finalData.primalStatus = static_cast<unsigned char>(primalExitStatus);
+        uCallback->finalData.nIterations = nDualIterations;
         if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY) {
             uCallback->finalData.cost = output.cost;
             uCallback->finalData.x = &output.x;
@@ -640,12 +632,12 @@ void Core::SetFinalData() {
     }
 }
 void Core::SetLinearSolver() {
-    if (settings.linSolverType == LinSolverType::CUMULATIVE_EG_LDLT) {
+    if (config.linSolverType == 2) {
    //     lSolver = std::make_unique<CumulativeEGNSolver>(ws.M, ws.s);
-    } else if (settings.linSolverType == LinSolverType::MSS1) {
+    } else if (config.linSolverType == 1) {
    //     lSolver = std::make_unique<MssCumulativeSolver>(ws.M, ws.s);
     } else {
-        lSolver = std::make_unique<CumulativeLDLTSolver>(ws.M, ws.s, settings.rejectSingular);
+        lSolver = std::make_unique<CumulativeLDLTSolver>(ws.M, ws.s, config.rejectSingular);
     }
 }
 void Core::Solve() {
@@ -656,7 +648,7 @@ void Core::Solve() {
     gamma = 1.0;
     newActiveIndex = nConstraints;
     dualIteration = 0;
-    while (dualIteration < settings.nDualIterations) {
+    while (dualIteration < nDualIterations) {
         if (OrigInfeasible()) {
             dualExitStatus = DualLoopExitStatus::INFEASIBILITY;
             break;
@@ -666,12 +658,12 @@ void Core::Solve() {
             break;
         }
         ComputeDualVariable();
-        dualTolerance = -styGamma * settings.origPrimalFsb; // primal feasiblility was scaled in DB scaling
+        dualTolerance = -styGamma * config.origPrimalFsb; // primal feasiblility was scaled in DB scaling
         SelectNewActiveComponent();
         if(newActiveIndex == nConstraints) { //set to nConstraints in not found
             //Proccess singular components after all nonsingular
-            if (settings.rejectSingular) {
-                settings.rejectSingular = false;
+            if (config.rejectSingular) {
+                config.rejectSingular = false;
                 singularIndices.clear();
                 continue;
             }
@@ -682,7 +674,7 @@ void Core::Solve() {
         AddToActiveSet(newActiveIndex);
         primalIteration = 0;
         primalExitStatus = PrimalLoopExitStatus::UNKNOWN;
-        while (primalIteration < settings.nPrimalIterations) {
+        while (primalIteration < nPrimalIterations) {
             if (ws.activeConstraints.empty()) {
                 primalExitStatus = primalIteration == 0 ? PrimalLoopExitStatus::EMPTY_ACTIVE_SET_ON_ZERO_ITERATION :
                                                           PrimalLoopExitStatus::EMPTY_ACTIVE_SET;
@@ -690,8 +682,8 @@ void Core::Solve() {
             }
             int prStat = UpdatePrimal();
             const bool success = (prStat == 0) ||((prStat == SINGULARITY)
-                    && !settings.rejectSingular);
-            const bool rejectSingular = (prStat == SINGULARITY) && settings.rejectSingular;
+                    && !config.rejectSingular);
+            const bool rejectSingular = (prStat == SINGULARITY) && config.rejectSingular;
             if (success) {
                 if (ws.negativeZp.empty()) {
                     primalExitStatus = PrimalLoopExitStatus::ALL_PRIMAL_POSITIVE;
@@ -709,14 +701,14 @@ void Core::Solve() {
                 break;
             }
         }
-        if (primalIteration >= settings.nPrimalIterations) {
+        if (primalIteration >= nPrimalIterations) {
             primalExitStatus = PrimalLoopExitStatus::ITERATIONS;
         }
         SetIterationData();
         ++dualIteration;
     }
 
-    if (dualIteration >= settings.nDualIterations) {
+    if (dualIteration >= nDualIterations) {
         dualExitStatus = DualLoopExitStatus::ITERATIONS;
     }
     if (dualExitStatus == DualLoopExitStatus::ALL_DUAL_POSITIVE ||
