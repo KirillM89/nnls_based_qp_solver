@@ -11,7 +11,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${SRC_DIR}/log.cpp
     ${SRC_DIR}/timers.cpp
     ${SRC_DIR}/utils.cpp
-    ${SRC_DIR}/decorators.cpp
+    ${SRC_DIR}/decorator.cpp
     ${SRC_DIR}/core.cpp
     ${SRC_DIR}/linSolvers.cpp
     ${SRC_DIR}/callback.cpp
@@ -23,7 +23,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${SRC_DIR}/core_types.h
 )
 target_sources(${PROJECT_NAME} PUBLIC
-    ${PUB_DIR}/decorators.h
+    ${PUB_DIR}/decorator.h
     ${PUB_DIR}/types.h
     ${PUB_DIR}/callback.h
 )

@@ -1,4 +1,4 @@
-#include "../include/decorators.h"
+#include "decorator.h"
 #include "core.h"
 namespace QP_NNLS {
 

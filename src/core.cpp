@@ -566,11 +566,11 @@ void Core::FillOutput() {
     output.primalExitStatus = static_cast<unsigned char>(primalExitStatus);
     if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY){
         output.x = std::vector<double>(ws.x.begin(), ws.x.begin() + nPVariables);
-        output.lambda.resize(nPConstraints, 0.0);
+        output.lambdaC.resize(nPConstraints, 0.0);
         output.lambdaLw.resize(nPVariables, 0.0);
         output.lambdaUp.resize(nPVariables, 0.0);
         for (std::size_t i = 0; i < nPConstraints; ++i) {
-            output.lambda[i] = ws.lambda[i];
+            output.lambdaC[i] = ws.lambda[i];
         }
         for (std::size_t i = 0; i < nPVariables; ++i) {
             output.lambdaUp[i] = ws.lambda[nPConstraints + 2 * i];
@@ -624,7 +624,7 @@ void Core::SetFinalData() {
         if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY) {
             uCallback->finalData.cost = output.cost;
             uCallback->finalData.x = &output.x;
-            uCallback->finalData.lambda = &output.lambda;
+            uCallback->finalData.lambda = &output.lambdaC;
             uCallback->finalData.lambdaLw = &output.lambdaLw;
             uCallback->finalData.lambdaUp = &output.lambdaUp;
         }

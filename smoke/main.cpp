@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include "decorators.h"
+#include "decorator.h"
 
 namespace SMOKE_PROBLEM {
 // Test problem:
@@ -128,7 +128,7 @@ int main() {
             }
         }
         for (std::size_t c = 0; c < nConstraints; ++c) {
-            if (std::fabs(nnlsOutput.lambda[c] - SMOKE_PROBLEM_BASELINE::dualA[c]) >= eps) {
+            if (std::fabs(nnlsOutput.lambdaC[c] - SMOKE_PROBLEM_BASELINE::dualA[c]) >= eps) {
                 std::cout << "FAILED" << std::endl;
                 return 1;
             }

@@ -53,7 +53,7 @@ private:
     unsg_t newActiveIndex = 0;
     unsg_t rptInterval = 0;
     unsg_t nDualIterations = 0;
-    unsg_t nPrimalIterations = 1000;
+    unsg_t nPrimalIterations = 0;
     std::unordered_set<unsg_t> singularIndices;
     unsg_t dualIteration = 0;
     unsg_t primalIteration = 0;
