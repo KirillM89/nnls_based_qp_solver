@@ -6,9 +6,9 @@ Created on Wed Oct 22 15:36:13 2025
 """
 from libcpp.vector cimport vector
 ctypedef unsigned char bool
-cdef extern from "types.h":
-    cdef struct Configuration:
-        Configuratuion()
+cdef extern from "types.h" namespace "QP_NNLS":
+    ctypedef struct Configuration:
+        Configuration()
         unsigned char linSolverType
         unsigned char logLevel
         bool largeBoundsPenalty
@@ -19,6 +19,8 @@ cdef extern from "types.h":
         double origPrimalFsb 
         
     cdef struct Input:
+        Input()
+        vector[vector[double]] H
         vector[vector[double]] A
         vector[double] b
         vector[double] c
@@ -39,22 +41,23 @@ cdef extern from "types.h":
         vector[double] lambdaLw
         vector[double] lambdaUp
         
-cdef extern from "decorator.h":
-    cdef cppclass Core:
-        pass
-    cdef cppclass Callback:
-        pass
-    cdef cppclass QPNNLS:
-        QPNNLS()
-        void Init(const Configuration& config)
-        bool SetProblem(const Input& problem)
-        void SetCallback(Callback* callback = nullptr)
-        void Solve()
-        unsigned char GetInitStatus()
-        const Output& GetOutput()  
-        #bool isInitialized
-        #Core* core
-        #Output output
+cdef extern from "decorator.h" namespace "QP_NNLS":
+    cdef extern nogil:
+        cdef cppclass Core:
+            pass
+        cdef cppclass Callback:
+            pass
+        cdef cppclass QPNNLS:
+            QPNNLS()
+            void Init(const Configuration& config)
+            bool SetProblem(const Input& problem)
+            void SetCallback(Callback* callback = nullptr)
+            void Solve()
+            unsigned char GetInitStatus()
+            const Output& GetOutput()  
+            #bool isInitialized
+            #Core* core
+            #Output output
         
     
 
