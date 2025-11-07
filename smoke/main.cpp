@@ -2,38 +2,37 @@
 #include <cmath>
 #include <iostream>
 #include "decorator.h"
-
+using namespace QP_NNLS;
 namespace SMOKE_PROBLEM {
 // Test problem:
 // Number of variables = 12
 // Number of constraints = 3
 // Number of equality constraints = 1
 // H - identity matrix
-using namespace QP_NNLS;
 matrix_t H;
-const std::vector<double> c = {2.17299e6, -13162.7, 1.36145e6, 557966.0, 1.46127e6, 6.23872e6, 24368.4, -24368.4, -14567.7, -9040.55, 46731.1, 36536.2};
+const std::vector<fp_t> c = {2.17299e6, -13162.7, 1.36145e6, 557966.0, 1.46127e6, 6.23872e6, 24368.4, -24368.4, -14567.7, -9040.55, 46731.1, 36536.2};
 const matrix_t A = {{1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0}};
-const std::vector<double> b = {1.0e-7, 1.0e-7, 1.0e-7};
-const std::vector<double> lw = {-10.00553, -5.9893,  -0.0107047,  0.367332,  0.0107047,  0.0107047, -0.989295,  -10.0,  -1.0e-8,  -1.0e-8,  -1.0e-8,  1.0e-8};
-const std::vector<double> up = {9998.4,    0.0107047, 9998.69,    9998.73,   0.189295,    0.189295,  0.0107047,  10.0,   50.0,    50.0,     50.0,     50.0};
+const std::vector<fp_t> b = {1.0e-7, 1.0e-7, 1.0e-7};
+const std::vector<fp_t> lw = {-10.00553, -5.9893,  -0.0107047,  0.367332,  0.0107047,  0.0107047, -0.989295,  -10.0,  -1.0e-8,  -1.0e-8,  -1.0e-8,  1.0e-8};
+const std::vector<fp_t> up = {9998.4,    0.0107047, 9998.69,    9998.73,   0.189295,    0.189295,  0.0107047,  10.0,   50.0,    50.0,     50.0,     50.0};
 }
 
 namespace SMOKE_PROBLEM_BASELINE {
 //solution
-const std::vector<double> x = {-10.00553000112996, 0.01070470000195201, -0.01070469967089594, 9.994825300178494, 0.01070470036938787,
+const std::vector<fp_t> x = {-10.00553000112996, 0.01070470000195201, -0.01070469967089594, 9.994825300178494, 0.01070470036938787,
                         0.01070469990372658, -0.9892949999994021, 9.99789335764945e-08, 50.00000000000912, 50.00000000000366,
                         -9.989889804273847e-09, 9.989889804273847e-09};
-const std::vector<double> dualA = {-557975.9948253002, 582344.3948252, 0.0};
-const std::vector<double> dualL = {1615003.999644698, 0.0, 803473.9944700002, 0.0, 903294.0158794001, 5680744.0158794, 24367.410705,
+const std::vector<fp_t> dualA = {-557975.9948253002, 582344.3948252, 0.0};
+const std::vector<fp_t> dualL = {1615003.999644698, 0.0, 803473.9944700002, 0.0, 903294.0158794001, 5680744.0158794, 24367.410705,
                         0.0, 0.0, 0.0, 46731.09999999001, 36536.20000000999};
-const std::vector<double> dualU = {0.0, 13162.68929529999, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 14517.69999999998, 8990.549999999992, 0.0, 0.0};
-const double cost = -17299352.22259864;
+const std::vector<fp_t> dualU = {0.0, 13162.68929529999, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 14517.69999999998, 8990.549999999992, 0.0, 0.0};
+const fp_t cost = -17299352.22259864;
 const std::size_t nIterations = 12;
 }
-double GetMachineEps() {
-    double eps = 1.0;
+fp_t GetMachineEps() {
+    fp_t eps = 1.0;
     while (eps + 1.0 > 1.0) {
         eps *= 0.5;
     }
@@ -49,7 +48,7 @@ int main() {
     assert(SMOKE_PROBLEM_BASELINE::x.size() == nVariables);
     assert(SMOKE_PROBLEM_BASELINE::dualL.size() == nVariables);
     assert(SMOKE_PROBLEM_BASELINE::dualU.size() == nVariables);
-    SMOKE_PROBLEM::H.resize(nVariables, std::vector<double>(nVariables, 0.0));
+    SMOKE_PROBLEM::H.resize(nVariables, std::vector<fp_t>(nVariables, 0.0));
     for (std::size_t v = 0; v < nVariables; ++v) {
         assert( SMOKE_PROBLEM::lw[v] < SMOKE_PROBLEM::up[v]);
         SMOKE_PROBLEM::H[v][v] = 1.0;
@@ -71,6 +70,18 @@ int main() {
     nnlsProblem.up = SMOKE_PROBLEM::up;
     nnlsProblem.nEqConstraints = 1; // first nEqConstraints rows in A are equality constraints
     QP_NNLS::Configuration config;     // default settings
+    const fp_t eps = sqrt(GetMachineEps());
+    if (config.linSolverType != LIN_SOLVER_TYPE_DEFAULT ||
+        config.logLevel != LOG_LEVEL_DEFAULT ||
+        config.largeBoundsPenalty != USE_LARGE_BOUNDS_PENALTY_DEFAULT ||
+        config.posDefCorrection != USE_POS_DEF_CORRECTION_DEFAULT ||
+        config.gammaUpdate != USE_GAMMA_UPDATE_DEFAULT ||
+        std::fabs(config.nnlsResidNormFsb - NNLS_RESID_TOL_DEFAULT) > eps ||
+        std::fabs(config.origPrimalFsb - PRIMAL_FSB_DEFAULT) > eps)
+    {
+        std::cout << "FAILED: invalid settings" << std::endl;
+        return 1;
+    }
     QP_NNLS::QPNNLS solver;    // create solver instance
     solver.Init(config);          // apply settings
     // set problem
@@ -111,8 +122,6 @@ int main() {
     } else {
         abort();
     }
-    // check output
-    const double eps = sqrt(GetMachineEps());
     if (success) {
         if ((std::fabs(nnlsOutput.cost - SMOKE_PROBLEM_BASELINE::cost) >= eps) ||
             nnlsOutput.nIterations != SMOKE_PROBLEM_BASELINE::nIterations) {
