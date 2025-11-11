@@ -2,6 +2,7 @@
 !/src
 !/public
 !/smoke
+!/tests
 !/CMakeLists.txt
 !/README.md
 !/LICENSE

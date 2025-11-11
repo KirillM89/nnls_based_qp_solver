@@ -69,7 +69,7 @@ int main() {
     nnlsProblem.lw = SMOKE_PROBLEM::lw;
     nnlsProblem.up = SMOKE_PROBLEM::up;
     nnlsProblem.nEqConstraints = 1; // first nEqConstraints rows in A are equality constraints
-    QP_NNLS::Configuration config;     // default settings
+    QP_NNLS::Configuration config;  // default configuration
     const fp_t eps = sqrt(GetMachineEps());
     if (config.linSolverType != LIN_SOLVER_TYPE_DEFAULT ||
         config.logLevel != LOG_LEVEL_DEFAULT ||
@@ -79,11 +79,11 @@ int main() {
         std::fabs(config.nnlsResidNormFsb - NNLS_RESID_TOL_DEFAULT) > eps ||
         std::fabs(config.origPrimalFsb - PRIMAL_FSB_DEFAULT) > eps)
     {
-        std::cout << "FAILED: invalid settings" << std::endl;
+        std::cout << "FAILED: configuration" << std::endl;
         return 1;
     }
     QP_NNLS::QPNNLS solver;    // create solver instance
-    solver.Init(config);          // apply settings
+    solver.Init(config);       // apply settings
     // set problem
     // method SetProblem() preprocesses the input problem.
     // Returns true if all the preprocessing procedures passed without numerical problems, false otherwise
@@ -123,29 +123,44 @@ int main() {
         abort();
     }
     if (success) {
-        if ((std::fabs(nnlsOutput.cost - SMOKE_PROBLEM_BASELINE::cost) >= eps) ||
-            nnlsOutput.nIterations != SMOKE_PROBLEM_BASELINE::nIterations) {
-            std::cout << "FAILED" << std::endl;
-            return 1;
+        std::string status;
+        if (std::fabs(nnlsOutput.cost - SMOKE_PROBLEM_BASELINE::cost) >= eps) {
+            status += "cost ";
         }
+        if (nnlsOutput.nIterations != SMOKE_PROBLEM_BASELINE::nIterations) {
+            status += "iterations ";
+        }
+        bool xOk = true, lUpOk = true, lLwOk = true;
         for (std::size_t v = 0; v < nVariables; ++v) {
-            if ((std::fabs(nnlsOutput.x[v] - SMOKE_PROBLEM_BASELINE::x[v]) >= eps) ||
-                (std::fabs(nnlsOutput.lambdaUp[v] - SMOKE_PROBLEM_BASELINE::dualU[v]) >= eps) ||
-                (std::fabs(nnlsOutput.lambdaLw[v] - SMOKE_PROBLEM_BASELINE::dualL[v]) >= eps)) {
-                    std::cout << "FAILED" << std::endl;
-                    return 1;
+            if (std::fabs(nnlsOutput.x[v] - SMOKE_PROBLEM_BASELINE::x[v]) >= eps) {
+                xOk = false;
             }
+            if (std::fabs(nnlsOutput.lambdaUp[v] - SMOKE_PROBLEM_BASELINE::dualU[v]) >= eps) {
+                lUpOk = false;
+            }
+            if (std::fabs(nnlsOutput.lambdaLw[v] - SMOKE_PROBLEM_BASELINE::dualL[v]) >= eps) {
+                lLwOk = false;
+            }
+        }
+        if (!xOk) {
+            status += "x ";
+        }
+        if (!lUpOk) {
+            status += "lamUpBnd ";
+        }
+        if (!lLwOk) {
+            status += "lamLwBnd ";
         }
         for (std::size_t c = 0; c < nConstraints; ++c) {
             if (std::fabs(nnlsOutput.lambdaC[c] - SMOKE_PROBLEM_BASELINE::dualA[c]) >= eps) {
-                std::cout << "FAILED" << std::endl;
-                return 1;
+                status += "lamC";
+                break;
             }
         }
-        std::cout << "PASSED" << std::endl;
-        return 0;
+        std::cout << (status.empty() ? "PASSED" : "FAILED: ") << status << std::endl;
+        return static_cast<int>(status.empty());
     } else {
-        std::cout << "FAILED" << std::endl;
+        std::cout << "FAILED: exit status" << std::endl;
         return 1;
     }
 }

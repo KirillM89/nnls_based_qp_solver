@@ -3,8 +3,8 @@
 #include <iostream>
 
 namespace QP_NNLS {
-    double g_GetMachineEps() {
-        double eps = 1.0;
+    fp_t g_GetMachineEps() {
+        fp_t eps = 1.0;
         while (1.0 + eps > 1.0) {
             eps /= 2.0;
         }
@@ -23,9 +23,9 @@ namespace QP_NNLS {
 		}
 		return M;
 	}
-    std::vector<double> operator-(const std::vector<double>& v) {
+    std::vector<fp_t> operator-(const std::vector<fp_t>& v) {
         const std::size_t n = v.size();
-        std::vector<double> vinv(n);
+        std::vector<fp_t> vinv(n);
         for (std::size_t i = 0; i < n; ++i) {
             vinv[i] = - v[i];
         }
@@ -45,7 +45,7 @@ namespace QP_NNLS {
 			}
 		}
 	} 
-    void MultTransp(const matrix_t& M, const std::vector<double>& v, std::vector<double>& res) { //MT*v
+    void MultTransp(const matrix_t& M, const std::vector<fp_t>& v, std::vector<fp_t>& res) { //MT*v
 		const std::size_t nrows = M.size();
 		const std::size_t ncols = M.front().size();
 		for (int i = 0; i < ncols; ++i) {
@@ -56,7 +56,7 @@ namespace QP_NNLS {
 		}
     }
 
-    void MultTransp(const matrix_t& M, const std::vector<double>& v, const std::set<unsg_t>& activesetIndices, std::vector<double>& res) {
+    void MultTransp(const matrix_t& M, const std::vector<fp_t>& v, const std::set<unsg_t>& activesetIndices, std::vector<fp_t>& res) {
         //M_T * v on active set
         const std::size_t nrows = M.size();
         if (nrows == 0) {
@@ -104,7 +104,7 @@ namespace QP_NNLS {
         //M = Chol_T * Chol, Chol - low triangular matrix
         const std::size_t n = Chol.size();
         for (int r = 0; r < n; ++r) {
-            const double diagInv = 1.0 / Chol[r][r];
+            const fp_t diagInv = 1.0 / Chol[r][r];
             for (int c = 0; c <= r; ++c) {
                 Inv[r][c] = (c == r) ? diagInv : 0.0;
                 for (int i = 0; i < r; ++i) {
@@ -146,7 +146,7 @@ namespace QP_NNLS {
     }
 
 	void GetIdentityMatrix(int size, matrix_t& M) {
-		M.resize(size, std::vector<double>(size, 0.0));
+        M.resize(size, std::vector<fp_t>(size, 0.0));
 		for (int i = 0; i < size; ++i) {
 			M[i][i] = 1.0;
 		}
@@ -155,14 +155,14 @@ namespace QP_NNLS {
     unsigned char InPlaceLdlt(matrix_t& M, std::vector<int>& P, size_t& iZero, size_t& iNeg, bool pvt, bool posDefCor) {
         const std::size_t n = M.size();
         unsigned char rStatus = 0u;
-        const double mEps = g_GetMachineEps();
-        const double dCorrection = 2.0 * mEps;
-        const double machZero = 0.1 * mEps;
+        const fp_t mEps = g_GetMachineEps();
+        const fp_t dCorrection = 2.0 * mEps;
+        const fp_t machZero = 0.1 * mEps;
         for (std::size_t c = 0; c < n; ++c) { // by columns
             P[c] = -1.0;
             if (pvt) {
                 std::size_t iMax = c;
-                double dmax = M[c][c];
+                fp_t dmax = M[c][c];
                 for (std::size_t i = c; i < n; ++i) {
                     if (M[i][i] > dmax) {
                         iMax = i;
@@ -177,7 +177,7 @@ namespace QP_NNLS {
                     P[c] = iMax;
                 }
             }
-            double d = 0.0;
+            fp_t d = 0.0;
             for (std::size_t r = 0; r < c; ++r) { // by rows
                 d -= (M[c][r] * M[c][r] * M[r][r]); // d_rr
             }
@@ -196,7 +196,7 @@ namespace QP_NNLS {
             // M[r][r] = 1.0
             // L_ij = (M_ij - Sum_k=1:j L_ik * L_jk * D_k) / D_j
             for (std::size_t r = c + 1; r < n; ++r) {
-                double sum = 0.0;
+                fp_t sum = 0.0;
                 for (std::size_t k = 0; k < c; ++k) {
                     sum -= (M[r][k] * M[c][k] * M[k][k]);
                 }
@@ -210,7 +210,7 @@ namespace QP_NNLS {
         return rStatus;
     }
 
-    void Mult(const matrix_t& M, const std::vector<double>& v, std::vector<double>& res) {
+    void Mult(const matrix_t& M, const std::vector<fp_t>& v, std::vector<fp_t>& res) {
         //M_T * v
 		const int n = M.size();
 		const int m = M.front().size();
@@ -221,17 +221,17 @@ namespace QP_NNLS {
 			}
 		}
 	}
-	void VSum(const std::vector<double>& v1, const std::vector<double>& v2, std::vector<double>& sum) { //v1+v2
+    void VSum(const std::vector<fp_t>& v1, const std::vector<fp_t>& v2, std::vector<fp_t>& sum) { //v1+v2
 		const int n = static_cast<int>(v1.size());
 		for (int i = 0; i < n; ++i) {
 			sum[i] = v1[i] + v2[i];
 		}
 	}
-	void VAdd(std::vector<double>& v1, const std::vector<double>& v2) { // v1+=v2
+    void VAdd(std::vector<fp_t>& v1, const std::vector<fp_t>& v2) { // v1+=v2
 		return;
 	}
-	double DotProduct(const std::vector<double>& v1, const std::vector<double>& v2) {
-		double res = 0.0;
+    fp_t DotProduct(const std::vector<fp_t>& v1, const std::vector<fp_t>& v2) {
+        fp_t res = 0.0;
 		const int sz = v1.size();
 		for (int i = 0; i < sz; ++i) {
 			res += v1[i] * v2[i];
@@ -239,24 +239,24 @@ namespace QP_NNLS {
 		return res;
 	}
 
-    double DotProduct(const std::vector<double>& v1, const std::vector<double>& v2, const std::set<unsg_t>& activeSetIndices) {
-        double res = 0.0;
+    fp_t DotProduct(const std::vector<fp_t>& v1, const std::vector<fp_t>& v2, const std::set<unsg_t>& activeSetIndices) {
+        fp_t res = 0.0;
         for (auto iAct: activeSetIndices) {
             res += v1[iAct] * v2[iAct];
         }
         return res;
     }
 
-    LDLT::LDLT(const matrix_t& M, const std::vector<double>& S):
+    LDLT::LDLT(const matrix_t& M, const std::vector<fp_t>& S):
         d(0.0), maxSize(M.size()), nX(M.front().size()), curIndex(0), actSize(0),
         M(M), S(S),
-        L(matrix_t(maxSize, std::vector<double>(maxSize))),
-        D(std::vector<double>(maxSize)),
-        norms2(std::vector<double>(maxSize)),
-        cache(matrix_t(maxSize, std::vector<double>(maxSize, inf)))
+        L(matrix_t(maxSize, std::vector<fp_t>(maxSize))),
+        D(std::vector<fp_t>(maxSize)),
+        norms2(std::vector<fp_t>(maxSize)),
+        cache(matrix_t(maxSize, std::vector<fp_t>(maxSize, inf)))
     {
         for (std::size_t r = 0; r < maxSize; ++r) {
-            double sum = 0.0;
+            fp_t sum = 0.0;
             for (std::size_t c = 0; c < nX ; ++c) {
                 sum += M[r][c] * M[r][c];
             }
@@ -316,8 +316,8 @@ namespace QP_NNLS {
             if (std::fabs(D[i]) < dTol) {
                 L[actSize][i] = 0.0;
             } else {
-                double dot = 0.0;
-                const double cv = cache[rowNumber][r];
+                fp_t dot = 0.0;
+                const fp_t cv = cache[rowNumber][r];
                 if (isSame(cv, inf)) {
                     dot = S[r] * S[rowNumber];
                     for (std::size_t j = 0; j < nX; ++j) {
@@ -371,12 +371,12 @@ namespace QP_NNLS {
         }
     }
 
-    MmtLinSolver::MmtLinSolver(const matrix_t& M, const std::vector<double>& S):
+    MmtLinSolver::MmtLinSolver(const matrix_t& M, const std::vector<fp_t>& S):
         nDZero(0), maxSize(S.size()), curSize(0), gamma(1.0), ldlt(M,S), S(S),
-        forward(std::vector<double>(maxSize)),
-        backward(std::vector<double>(maxSize))
+        forward(std::vector<fp_t>(maxSize)),
+        backward(std::vector<fp_t>(maxSize))
     {}
-    unsigned int MmtLinSolver::Solve(const std::set<unsigned int>& active, double gamma) {
+    unsigned int MmtLinSolver::Solve(const std::set<unsigned int>& active, fp_t gamma) {
         nDZero = ldlt.Compute(active);
         curSize = active.size();
         this->gamma = gamma;
@@ -388,7 +388,7 @@ namespace QP_NNLS {
         const matrix_t& L = ldlt.GetL();
         std::size_t i = 0;
         for (auto iAct : active) {
-            double sum = 0.0;
+            fp_t sum = 0.0;
             for (std::size_t j = 0; j < i; ++j) {
                 sum += L[i][j] * forward[j];
             }
@@ -398,9 +398,9 @@ namespace QP_NNLS {
     }
     void MmtLinSolver::Backward() {
         const matrix_t& L = ldlt.GetL();
-        const std::vector<double>& D = ldlt.GetD();
+        const std::vector<fp_t>& D = ldlt.GetD();
         for (int i = curSize - 1; i >= 0; --i) {
-            double sum = 0.0;
+            fp_t sum = 0.0;
             for (int j = i + 1; j < curSize; ++j) {
                 sum += L[j][i] * D[i] * backward[j];
             }

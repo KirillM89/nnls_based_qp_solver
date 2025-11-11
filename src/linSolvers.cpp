@@ -3,7 +3,7 @@
 #include <cmath>
 namespace QP_NNLS {
 CumulativeSolver::CumulativeSolver(const matrix_t& M,
-                                   const std::vector<double>& s ):
+                                   const std::vector<fp_t>& s ):
     nConstraints(M.size()),
     nVariables(0),
     nActive(0),
@@ -31,13 +31,13 @@ bool CumulativeSolver::Delete(unsg_t indx) {
     return true;
 }
 CumulativeLDLTSolver::CumulativeLDLTSolver(const matrix_t& M,
-                                           const std::vector<double>& s,
+                                           const std::vector<fp_t>& s,
                                            bool rejectSingular):
     rejectSingular(rejectSingular),
     gamma(1.0), ldlt(M, s), ndzero(0),
     maxSize(s.size()), S(s),
-    forward(std::vector<double>(maxSize)),
-    backward(std::vector<double>(maxSize))
+    forward(std::vector<fp_t>(maxSize)),
+    backward(std::vector<fp_t>(maxSize))
 { }
 
 bool CumulativeLDLTSolver::Add(unsg_t indx) {
@@ -51,7 +51,7 @@ bool CumulativeLDLTSolver::Delete(unsg_t indx) {
 }
 const LinSolverOutput& CumulativeLDLTSolver::Solve() {
     const matrix_t& l = ldlt.GetL();
-    const std::vector<double>& d = ldlt.GetD();
+    const std::vector<fp_t>& d = ldlt.GetD();
     const std::list<unsigned int>& rows = ldlt.GetRows();
     output.nDNegative = ldlt.GetNDzero();
     output.indices = rows;
@@ -59,12 +59,12 @@ const LinSolverOutput& CumulativeLDLTSolver::Solve() {
         const std::size_t nr = rows.size();
         output.nDNegative = 0;
         if (nr == 0) {
-            output.solution = std::vector<double>(maxSize, 0.0);
+            output.solution = std::vector<fp_t>(maxSize, 0.0);
             output.indices.clear();
         } else {
             std::size_t i = 0;
             for (auto iAct : rows) {
-                double sum = 0.0;
+                fp_t sum = 0.0;
                 for (std::size_t j = 0; j < i; ++j) {
                     sum += l[i][j] * forward[j];
                 }
@@ -72,7 +72,7 @@ const LinSolverOutput& CumulativeLDLTSolver::Solve() {
                 ++i;
             }
             for (int i = nr - 1; i >= 0; --i) {
-                double sum = 0.0;
+                fp_t sum = 0.0;
                 for (int j = i + 1; j < nr; ++j) {
                     sum += l[j][i] * d[i] * backward[j];
                 }
