@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "test_utils.h"
+#include "test_data.h"
 #include "decorator.h"
 using namespace QP_NNLS;
 //using namespace QP_NNLS_TEST_DATA;
@@ -426,6 +427,11 @@ TEST(Utils_LDLT, Del)
     tester.Add(0);    // 3
     tester.Delete(3); // 2
     tester.Add(2);    // 3
+}
+using namespace QP_NNLS_TEST_DATA;
+TEST(QP_PROBLEM, SIMPLE_1)
+{
+    QPProblem(SIMPLE_1::in, SIMPLE_1::out);
 }
 
 

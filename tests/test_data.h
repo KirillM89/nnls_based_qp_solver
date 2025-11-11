@@ -1,6 +1,7 @@
 #ifndef QP_NNLS_TEST_DATA_H
 #define QP_NNLS_TEST_DATA_H
 #include "types.h"
+#include "test_utils.h"
 using namespace QP_NNLS;
 namespace QP_NNLS_TEST_DATA {
     // 0.5 x_T * H * x + c_T * x ; A * x < b; lw <= x <= up
@@ -20,11 +21,26 @@ namespace PSDM { // positive semidefinite matrix
     const matrix_t mat5 = {{10000.0 , 1.0 , 2.0}, {1.0 , 1000.0, 5.0}, {2.0 , 5.0, 10.0}};
 	const matrix_t mat6 = {{10000.0 , 1.0 , 2.0 , 3.0}, {1.0 , 1000.0, 5.0, 7.0}, {2.0 , 5.0, 100.0 , 6.0}, {3.0, 7.0, 6.0, 1.0}};
 }
+/*
+bool isPositiveDefinite;
+unsigned char dualExitStatus;
+unsigned char primalExitStatus;
+unsg_t nIterations;
+fp_t maxBViolation;
+fp_t maxCViolation;
+fp_t cost;
+std::vector<fp_t> x;
+std::vector<fp_t> lambdaC;
+std::vector<fp_t> lambdaLw;
+std::vector<fp_t> lambdaUp;
+*/
 namespace SIMPLE_1 {
-    const matrix_t H; 
+    const matrix_t H(GetIdentity(2)); 
     const std::vector<fp_t> c = { 0.0, 0.0 };
 	const matrix_t A = { { 0.0, -1.0 } };
     const std::vector<fp_t> b = { -1.0 };
+    Input in{GetIdentity(2), A, b, c, {}, {} ,0};
+    Output out{true, 0, 0, 5, 0.0, 0.0, 0.0, {0.0, 0.0}, {0.0}, {0.0, 0.0}, {0.0, 0.0} };
 }
 namespace SIMPLE_2 {
     const matrix_t H= {{1.0 , 0.0}, {0.0, 1.0}};

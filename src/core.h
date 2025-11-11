@@ -47,6 +47,8 @@ private:
     };
     unsg_t nVariables = 0;
     unsg_t nConstraints = 0;
+    unsg_t nLwBounds = 0;
+    unsg_t nUpBounds = 0;
     unsg_t nPVariables = 0;
     unsg_t nPConstraints = 0;
     unsg_t nEqConstraints = 0;

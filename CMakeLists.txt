@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
 project(nnls_qp)
-set(GTEST_CREATE_SHARED_LIBRARY 1)
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(PUB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library(${PROJECT_NAME} STATIC)
@@ -34,11 +33,10 @@ target_sources(smoke PRIVATE
 target_link_libraries(smoke PRIVATE ${PROJECT_NAME})
 target_include_directories(smoke PRIVATE
     ${PUB_DIR}
-    #${CMAKE_CURRENT_SOURCE_DIR}/build/Debug
-    #${CMAKE_CURRENT_SOURCE_DIR}/build/Release
 )
 
-set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/gtest/install)
+set(GTEST_CREATE_SHARED_LIBRARY 1)
+set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gtest/install)
 if(NOT EXISTS "${GTEST_DIR}")
     message(ERROR "Directory ${GTEST_DIR} does not exist!")
 endif()
@@ -54,18 +52,7 @@ target_include_directories(unit_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-
-#add_library(gt SHARED IMPORTED)
-#set_target_properties(gt PROPERTIES
-#    IMPORTED_LOCATION ${GTEST_DIR}/lib/gtest.lib
-#    IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
-#)
-#add_library(gtm SHARED IMPORTED)
-#set_target_properties(gtm PROPERTIES
-#     IMPORTED_LOCATION ${GTEST_DIR}/lib/gtest_main.lib
-#     IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
-#)
-target_link_libraries(unit_tests PRIVATE ${PROJECT_NAME} ${GTEST_DIR}/lib/gtest.lib)
+target_link_libraries(unit_tests PRIVATE ${PROJECT_NAME} gtest)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 #add_executable(examples)

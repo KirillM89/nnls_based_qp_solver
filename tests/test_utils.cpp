@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "test_utils.h"
+#include "decorator.h"
 
 bool isNumber(const double& val) {
 	return std::isfinite(val);
@@ -225,7 +226,25 @@ matrix_t genRandomStrictLowerTriangular(int mSize, int iBg) {
 	}	
 	return Mrand;
 }
-
+matrix_t GetIdentity(std::size_t n)
+{
+    matrix_t I(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        I[i].resize(n, 0);
+        I[i][i] = 1.0;
+    }
+    return I;
+}
+fp_t RelTol(fp_t v1, fp_t v2)
+{
+    if (std::fabs(v1) < T_ZERO && std::fabs(v2) < T_ZERO) {
+        return 0;
+    }
+    if (std::fabs(v2) < T_ZERO) {
+        std::swap(v2, v1);
+    }
+    return std::fabs((v1 - v2) / v2);
+}
 void LdltTester::Set(const matrix_t& M, const std::vector<double>& S) {
     this->M = M;
     this->S = S;
@@ -296,6 +315,63 @@ void LdltTester::Check() {
         }
     }
 }
+// set problem
+// method SetProblem() preprocesses the input problem.
+// Returns true if all the preprocessing procedures passed without numerical problems, false otherwise
+// If SetProblem() returns "true" the properties of the problem can be seen using method GetInitStatus()
+// QP_NNLS::InitStageStatus initStatus = solver.GetInitStatus()
+// "SUCCESS" means that problem has positive definite H
+// "D_Z" means positive semidefinite
+// "D_ZN" or "D_N"  - indefinite or negative definite
+// Solver can't solve indefinite or negative definite problems but can solve positive semidefinite problems,
+// in this case H correction will take place
+QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& config)
+{
+    using namespace QP_NNLS;
+    QPNNLS solver;    // create solver instance
+    solver.Init(config);       // apply settings
+    bool posDef = true;
+    if (!solver.SetProblem(in)) {
+        if (solver.GetInitStatus()) {
+            posDef = false;
+        }
+    }
+    solver.Solve();
+    const QP_NNLS::Output& sOut = solver.GetOutput();
+    EXPECT_EQ(sOut.dualExitStatus, out.dualExitStatus);
+    EXPECT_EQ(sOut.primalExitStatus, out.primalExitStatus);
+    EXPECT_EQ(sOut.isPositiveDefinite, out.isPositiveDefinite);
+    EXPECT_EQ(posDef, out.isPositiveDefinite);
+    EXPECT_EQ(sOut.nIterations, out.nIterations);
+    EXPECT_EQ(sOut.x.size(), out.x.size());
+    EXPECT_EQ(sOut.lambdaC.size(), out.lambdaC.size());
+    EXPECT_EQ(sOut.lambdaLw.size(), out.lambdaLw.size());
+    EXPECT_EQ(sOut.lambdaUp.size(), out.lambdaUp.size());
+    EXPECT_NEAR(sOut.maxBViolation, out.maxBViolation, FP_TOL);
+    EXPECT_NEAR(sOut.maxCViolation, out.maxCViolation, FP_TOL);
+    if (sOut.x.size() == out.x.size()) {
+        for (std::size_t i = 0; i < out.x.size(); ++i) {
+            EXPECT_LT(RelTol(sOut.x[i], out.x[i]), FP_REL_TOL);
+        }
+    }
+    if (sOut.lambdaC.size() == out.lambdaC.size()) {
+        for (std::size_t i = 0; i < out.lambdaC.size(); ++i) {
+            EXPECT_LT(RelTol(sOut.lambdaC[i], out.lambdaC[i]), FP_REL_TOL);
+        }
+    }
+    if (sOut.lambdaLw.size() == out.lambdaLw.size()) {
+        for (std::size_t i = 0; i < out.lambdaLw.size(); ++i) {
+            EXPECT_LT(RelTol(sOut.lambdaLw[i], out.lambdaLw[i]), FP_REL_TOL);
+        }
+    }
+    if (sOut.lambdaUp.size() == out.lambdaUp.size()) {
+        for (std::size_t i = 0; i < out.lambdaUp.size(); ++i) {
+            EXPECT_LT(RelTol(sOut.lambdaUp[i], out.lambdaUp[i]), FP_REL_TOL);
+        }
+    }
+}
+
+
 
 
 

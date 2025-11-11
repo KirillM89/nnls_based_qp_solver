@@ -14,7 +14,13 @@ void Core::Init(const Input& problem) {
     nPConstraints = static_cast<unsg_t>(problem.A.size());
     nEqConstraints = problem.nEqConstraints;
     nVariables = nPVariables;
-    nConstraints = nPConstraints + 2 * nPVariables;
+    if (problem.up.size()) {
+        nUpBounds = nPVariables;
+    }
+    if (problem.lw.size()) {
+        nLwBounds = nPVariables;
+    }
+    nConstraints = nPConstraints + nUpBounds + nLwBounds;
     if (config.largeBoundsPenalty) {
         nPVariables += 1;
         nConstraints += 1;
@@ -24,7 +30,7 @@ void Core::Init(const Input& problem) {
     minEl = 10.0 * sqrt(mEps);
     scaleFactorDB = 1.0;
     initStatus = InitStageStatus::SUCCESS;
-    nDualIterations = static_cast<unsg_t>((2 * nPVariables + nPConstraints) * 1.5);
+    nDualIterations = static_cast<unsg_t>((2 * nPVariables + nPConstraints) * 2);
     gamma = 1.0;
     singularIndices.clear();
 }
@@ -101,7 +107,7 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
        // if (settings.checkFactorization) {
        //     CheckFactorization(ld, H, pmt);
        // }
-        output.isPositiveDefinite = false;
+        output.isPositiveDefinite = true;
         const double minChol = 2.0 * mEps; // min diagonal value
         const double maxCondNumInv = sqrt(mEps);
         const double maxEgVal = ld[0][0];
@@ -126,8 +132,9 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
     return ld;
 }
 void Core::ComputeLS4Constraints(const matrix_t& ld,  const Input& problem) {
+    std::size_t nB = nUpBounds + nLwBounds;
     const std::size_t nV = config.largeBoundsPenalty ? nVariables - 1 : nVariables;
-    const std::size_t nC = config.largeBoundsPenalty ? nConstraints -  2 * nV - 1 : nConstraints - 2 * nV;
+    const std::size_t nC = config.largeBoundsPenalty ? nConstraints -  nB - 1 : nConstraints - nB;
     for (std::size_t c = 0; c < nC; ++c) {
         double b = problem.b[c];
         int stat = 1;
@@ -146,11 +153,15 @@ void Core::ComputeLS4Constraints(const matrix_t& ld,  const Input& problem) {
         }
         double norm2 = ws.M[c].back() * ws.M[c].back();
         for (std::size_t v = 0; v < nV; ++v) {
-            const std::size_t iBnd = nC + 2 * v;
-            if (c == 0) {
-                const std::vector<double>& minLd = -ld[v];
-                std::copy(ld[v].begin(), ld[v].end(), ws.M[iBnd].begin());   // M part corresponding to bounds
-                std::copy(minLd.begin(), minLd.end(), ws.M[iBnd + 1].begin());
+            if ((nUpBounds & nLwBounds) && c == 0) {
+                const std::size_t iBnd = nC + 2 * v;
+                if (nUpBounds ) {
+                    std::copy(ld[v].begin(), ld[v].end(), ws.M[iBnd].begin());   // M part corresponding to bounds
+                } 
+                if (nLwBounds) {
+                    const std::vector<double>& minLd = -ld[v];
+                    std::copy(minLd.begin(), minLd.end(), ws.M[iBnd + (nUpBounds ? 1 : 0)].begin());
+                }
             }
             for (std::size_t j = 0; j < nV; ++j) {
                 if (c == 0) {
@@ -274,7 +285,9 @@ bool Core::PrepareNNLS(const Input &problem) {
         return false;
     }
     ComputeLS4Constraints(ld, problem);
-    ComputeLS4Bounds(problem);
+    if (nUpBounds & nLwBounds) {
+        ComputeLS4Bounds(problem);
+    }
     if (config.largeBoundsPenalty) {
         ws.M.back().back() = -1.0;
     }
@@ -549,14 +562,17 @@ void Core::ComputeOrigSolution() {
         ws.lambda[i] *= (-ws.aux[i] * invScaleFactor);
     }
     //recompute x
-    for (std::size_t i = 0; i < nPVariables; ++i) {
-        ws.aux[i] = 0.0;
-        for (std::size_t j = 0; j < nPVariables; ++j) {
-            ws.aux[i] += (ws.M[nPConstraints + 2 * i][j] * ws.x[j] / ws.Chol[j]);
+    if (nUpBounds & nLwBounds) {
+        for (std::size_t i = 0; i < nPVariables; ++i) {
+            ws.aux[i] = 0.0;
+            for (std::size_t j = 0; j < nPVariables; ++j) {
+                ws.aux[i] += (ws.M[nPConstraints + 2 * i][j] * ws.x[j] / ws.Chol[j]);
+            }
+            ws.aux[i] /= (ws.aux[nPConstraints + 2 * i] * scaleFactorDB);
         }
-        ws.aux[i] /= (ws.aux[nPConstraints + 2 * i] * scaleFactorDB);
+        std::copy(ws.aux.begin(), ws.aux.begin() + nPVariables, ws.x.begin());
     }
-    std::copy(ws.aux.begin(), ws.aux.begin() + nPVariables, ws.x.begin());
+    //std::copy(ws.aux.begin(), ws.aux.begin() + nPVariables, ws.x.begin());
 }
 
 
@@ -571,9 +587,15 @@ void Core::FillOutput() {
         for (std::size_t i = 0; i < nPConstraints; ++i) {
             output.lambdaC[i] = ws.lambda[i];
         }
-        for (std::size_t i = 0; i < nPVariables; ++i) {
-            output.lambdaUp[i] = ws.lambda[nPConstraints + 2 * i];
-            output.lambdaLw[i] = ws.lambda[nPConstraints + 2 * i + 1];
+        if (nUpBounds & nLwBounds) {
+            for (std::size_t i = 0; i < nPVariables; ++i) {
+                if (nUpBounds) {
+                    output.lambdaUp[i] = ws.lambda[nPConstraints + 2 * i];
+                } 
+                if (nLwBounds) {
+                    output.lambdaLw[i] = ws.lambda[nPConstraints + 2 * i + (nUpBounds ? 1 : 0)];
+                }
+            }
         }
         output.cost = cost;
     }
