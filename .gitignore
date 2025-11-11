@@ -3,6 +3,7 @@
 !/public
 !/smoke
 !/tests
+/tests/gtest
 !/CMakeLists.txt
 !/README.md
 !/LICENSE
