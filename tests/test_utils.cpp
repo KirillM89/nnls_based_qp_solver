@@ -342,13 +342,14 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
     EXPECT_EQ(sOut.isPositiveDefinite, out.isPositiveDefinite);
     EXPECT_EQ(posDef, out.isPositiveDefinite);
     EXPECT_EQ(sOut.nIterations, out.nIterations);
+    EXPECT_LT(RelTol(sOut.cost, out.cost), FP_REL_TOL) << sOut.cost;
     EXPECT_EQ(sOut.x.size(), out.x.size());
     EXPECT_EQ(sOut.lambdaC.size(), out.lambdaC.size());
     EXPECT_EQ(sOut.lambdaLw.size(), out.lambdaLw.size());
     EXPECT_EQ(sOut.lambdaUp.size(), out.lambdaUp.size());
     if (sOut.x.size() == out.x.size()) {
         for (std::size_t i = 0; i < out.x.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.x[i], out.x[i]), FP_REL_TOL);
+            EXPECT_LT(RelTol(sOut.x[i], out.x[i]), FP_REL_TOL) << sOut.x[i];
         }
     }
     if (sOut.lambdaC.size() == out.lambdaC.size()) {

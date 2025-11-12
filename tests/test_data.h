@@ -61,6 +61,67 @@ namespace SIMPLE_3_NO_BOUNDS {
     Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
     Output out{ true, 1, 2, 0.5, {0.0, 1.0}, {0.5, 0.5}, {}, {} };
 }
+namespace SIMPLE_4_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2) + (x1 - x2); x1 + x2 >= 1.0
+    // sol (0.0, 1.0) lam = {-1.0, 1.0}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 1.0, -1.0 };
+    const matrix_t A = { { -1.0, -1.0 } };
+    const std::vector<fp_t> b = { -1.0 };
+    Input in{GetIdentity(2), A, b, c, {}, {}, 0};
+    Output out{true, 1, 1, -0.75, {-0.5, 1.5}, {0.5}, {}, {}};
+}
+namespace SIMPLE_5_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2) + (x1 - x2); x1 + x2 >= 1.0 , -x1 + x2 >= 1.0
+    // sol (0.0, 1.0) lam = {0.5, -0.5}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 1.0, -1.0 };
+    const matrix_t A = { { -1.0, -1.0 }, {1.0, -1.0} };
+    const std::vector<fp_t> b = { -1.0, -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 1, -0.75, {-0.5, 1.5}, {0.5, 0.0}, {}, {} };
+}
+namespace SIMPLE_6_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2) + x1; x1 >= 1.0
+    // sol (1.0, 0.0) lam = {2.0}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 1.0, 0.0 };
+    const matrix_t A = {{ -1.0, 0.0}};
+    const std::vector<fp_t> b = { -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 1, 1.5, {1.0, 0.0}, {2.0}, {}, {} };
+}
+namespace SIMPLE_7_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2) + x1 + x2; x1 >= 1.0
+    // sol (1.0, -1.0) lam = {2.0}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 1.0, 1.0 };
+    const matrix_t A = { { -1.0, 0.0} };
+    const std::vector<fp_t> b = { -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 1, 1.0, {1.0, -1.0}, {2.0}, {}, {} };
+}
+namespace SIMPLE_8_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2) + x1 + x2; x1 >= 1.0, x2 >= 1.0 
+    // sol (1.0, 1.0) lam = {2.0, 2.0}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 1.0, 1.0 };
+    const matrix_t A = { { -1.0, 0.0} , {0.0, -1.0} };
+    const std::vector<fp_t> b = { -1.0, -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 2, 3.0, {1.0, 1.0}, {2.0, 2.0}, {}, {} };
+}
+namespace SIMPLE_9_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2) + x1 + x2; x1 >= 2.0, x2 >= 3.0 
+    // sol (2.0, 3.0) lam = {4.0, 6.0}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 1.0, 1.0 };
+    const matrix_t A = { { -1.0, 0.0} , {0.0, -1.0} };
+    const std::vector<fp_t> b = { -2.0, -3.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 2, 11.5, {2.0, 3.0}, {3.0, 4.0}, {}, {} };
+}
+
 namespace SIMPLE_1_LW_BOUNDS {
     // min 0.5 * (x1^2 + x2^2); x1 >= 1.0
     // sol (0.0, 1.0) lam = 1.0
