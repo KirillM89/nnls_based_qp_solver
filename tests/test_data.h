@@ -24,23 +24,62 @@ namespace PSDM { // positive semidefinite matrix
 /*
 bool isPositiveDefinite;
 unsigned char dualExitStatus;
-unsigned char primalExitStatus;
 unsg_t nIterations;
-fp_t maxBViolation;
-fp_t maxCViolation;
 fp_t cost;
 std::vector<fp_t> x;
 std::vector<fp_t> lambdaC;
 std::vector<fp_t> lambdaLw;
 std::vector<fp_t> lambdaUp;
 */
-namespace SIMPLE_1 {
+namespace SIMPLE_1_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2); x2 >= 1.0
+    // sol (0.0, 1.0) lam = 1.0
     const matrix_t H(GetIdentity(2)); 
     const std::vector<fp_t> c = { 0.0, 0.0 };
 	const matrix_t A = { { 0.0, -1.0 } };
     const std::vector<fp_t> b = { -1.0 };
     Input in{GetIdentity(2), A, b, c, {}, {} ,0};
-    Output out{true, 0, 0, 5, 0.0, 0.0, 0.0, {0.0, 0.0}, {0.0}, {0.0, 0.0}, {0.0, 0.0} };
+    Output out{true, 1, 1, 0.5, {0.0, 1.0}, {1.0}, {}, {} };
+}
+namespace SIMPLE_2_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2); x1 + x2 >= 1.0
+    // sol (0.5, 0.5) lam = 0.5
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 0.0, 0.0 };
+    const matrix_t A = { { -1.0, -1.0 } };
+    const std::vector<fp_t> b = { -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 1, 0.25, {0.5, 0.5}, {0.5}, {}, {} };
+}
+namespace SIMPLE_3_NO_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2); 0.5 * x1 + x2 >= 1.0, x2 - 0.5 * x1 >= 1.0 
+    // sol (0.0, 1.0) lam = {0.5, 0.5}
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 0.0, 0.0 };
+    const matrix_t A = { { -0.5, -1.0 }, { 0.5, -1.0 } };
+    const std::vector<fp_t> b = { -1.0, -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 2, 0.5, {0.0, 1.0}, {0.5, 0.5}, {}, {} };
+}
+namespace SIMPLE_1_LW_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2); x1 >= 1.0
+    // sol (0.0, 1.0) lam = 1.0
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 0.0, 0.0 };
+    const matrix_t A = { { 0.0, -1.0 } };
+    const std::vector<fp_t> b = { -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 1, 0.5, {0.0, 1.0}, {1.0}, {}, {} };
+}
+namespace SIMPLE_1_UP_BOUNDS {
+    // min 0.5 * (x1^2 + x2^2); x2 >= 1.0
+    // sol (0.0, 1.0) lam = 1.0
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 0.0, 0.0 };
+    const matrix_t A = { { 0.0, -1.0 } };
+    const std::vector<fp_t> b = { -1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
+    Output out{ true, 1, 1, 0.5, {0.0, 1.0}, {1.0}, {}, {} };
 }
 namespace SIMPLE_2 {
     const matrix_t H= {{1.0 , 0.0}, {0.0, 1.0}};

@@ -339,7 +339,6 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
     solver.Solve();
     const QP_NNLS::Output& sOut = solver.GetOutput();
     EXPECT_EQ(sOut.dualExitStatus, out.dualExitStatus);
-    EXPECT_EQ(sOut.primalExitStatus, out.primalExitStatus);
     EXPECT_EQ(sOut.isPositiveDefinite, out.isPositiveDefinite);
     EXPECT_EQ(posDef, out.isPositiveDefinite);
     EXPECT_EQ(sOut.nIterations, out.nIterations);
@@ -347,8 +346,6 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
     EXPECT_EQ(sOut.lambdaC.size(), out.lambdaC.size());
     EXPECT_EQ(sOut.lambdaLw.size(), out.lambdaLw.size());
     EXPECT_EQ(sOut.lambdaUp.size(), out.lambdaUp.size());
-    EXPECT_NEAR(sOut.maxBViolation, out.maxBViolation, FP_TOL);
-    EXPECT_NEAR(sOut.maxCViolation, out.maxCViolation, FP_TOL);
     if (sOut.x.size() == out.x.size()) {
         for (std::size_t i = 0; i < out.x.size(); ++i) {
             EXPECT_LT(RelTol(sOut.x[i], out.x[i]), FP_REL_TOL);
@@ -356,17 +353,17 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
     }
     if (sOut.lambdaC.size() == out.lambdaC.size()) {
         for (std::size_t i = 0; i < out.lambdaC.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.lambdaC[i], out.lambdaC[i]), FP_REL_TOL);
+            EXPECT_LT(RelTol(sOut.lambdaC[i], out.lambdaC[i]), FP_REL_TOL) << sOut.lambdaC[i];
         }
     }
     if (sOut.lambdaLw.size() == out.lambdaLw.size()) {
         for (std::size_t i = 0; i < out.lambdaLw.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.lambdaLw[i], out.lambdaLw[i]), FP_REL_TOL);
+            EXPECT_LT(RelTol(sOut.lambdaLw[i], out.lambdaLw[i]), FP_REL_TOL) << sOut.lambdaLw[i];
         }
     }
     if (sOut.lambdaUp.size() == out.lambdaUp.size()) {
         for (std::size_t i = 0; i < out.lambdaUp.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.lambdaUp[i], out.lambdaUp[i]), FP_REL_TOL);
+            EXPECT_LT(RelTol(sOut.lambdaUp[i], out.lambdaUp[i]), FP_REL_TOL) << sOut.lambdaUp[i];
         }
     }
 }

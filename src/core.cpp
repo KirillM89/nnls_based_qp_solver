@@ -578,16 +578,15 @@ void Core::ComputeOrigSolution() {
 
 void Core::FillOutput() {
     output.dualExitStatus = static_cast<unsigned char>(dualExitStatus);
-    output.primalExitStatus = static_cast<unsigned char>(primalExitStatus);
     if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY){
         output.x = std::vector<double>(ws.x.begin(), ws.x.begin() + nPVariables);
         output.lambdaC.resize(nPConstraints, 0.0);
-        output.lambdaLw.resize(nPVariables, 0.0);
-        output.lambdaUp.resize(nPVariables, 0.0);
         for (std::size_t i = 0; i < nPConstraints; ++i) {
             output.lambdaC[i] = ws.lambda[i];
         }
         if (nUpBounds & nLwBounds) {
+            output.lambdaLw.resize(nPVariables, 0.0);
+            output.lambdaUp.resize(nPVariables, 0.0);
             for (std::size_t i = 0; i < nPVariables; ++i) {
                 if (nUpBounds) {
                     output.lambdaUp[i] = ws.lambda[nPConstraints + 2 * i];
