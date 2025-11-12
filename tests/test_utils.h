@@ -11,10 +11,12 @@
 static constexpr double T_ZERO = 1.0e-15;
 static constexpr double FP_TOL = 1.0e-7;
 static constexpr double FP_REL_TOL = 1.0e-4;
+static constexpr double INF = 1.0e20;
 #elif FP_PREC == 0
 static constexpr double T_ZERO = 1.0e-6;
 static constexpr double FP_TOL = 1.0e-4;
 static constexpr double FP_REL_TOL = 1.0e-3;
+static constexpr double INF = 1.0e20;
 #endif
 static std::random_device rd;  // Will be used to obtain a seed for the random number engine
 static std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()

@@ -102,7 +102,7 @@ private:
     void UpdateScaleFactor(std::size_t iConstraint);
     void AddExtraComponent(unsg_t indx, fp_t bound, int& status);
     void ComputeLS4Constraints(const matrix_t& ld, const Input& problem);
-    void ComputeLS4Bounds(const Input& problem);
+    void ComputeLS4Bounds(const matrix_t& ld, const Input& problem);
     void Scale();
     void Init(const Input& problem);
     matrix_t ComputeLDLT(const matrix_t& H);

@@ -349,22 +349,22 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
     EXPECT_EQ(sOut.lambdaUp.size(), out.lambdaUp.size());
     if (sOut.x.size() == out.x.size()) {
         for (std::size_t i = 0; i < out.x.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.x[i], out.x[i]), FP_REL_TOL) << sOut.x[i];
+            EXPECT_LT(RelTol(sOut.x[i], out.x[i]), FP_REL_TOL) << sOut.x[i] << " " << i;
         }
     }
     if (sOut.lambdaC.size() == out.lambdaC.size()) {
         for (std::size_t i = 0; i < out.lambdaC.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.lambdaC[i], out.lambdaC[i]), FP_REL_TOL) << sOut.lambdaC[i];
+            EXPECT_LT(RelTol(sOut.lambdaC[i], out.lambdaC[i]), FP_REL_TOL) << sOut.lambdaC[i] << " " << i;
         }
     }
     if (sOut.lambdaLw.size() == out.lambdaLw.size()) {
         for (std::size_t i = 0; i < out.lambdaLw.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.lambdaLw[i], out.lambdaLw[i]), FP_REL_TOL) << sOut.lambdaLw[i];
+            EXPECT_LT(RelTol(sOut.lambdaLw[i], out.lambdaLw[i]), FP_REL_TOL) << sOut.lambdaLw[i] << " " << i;
         }
     }
     if (sOut.lambdaUp.size() == out.lambdaUp.size()) {
         for (std::size_t i = 0; i < out.lambdaUp.size(); ++i) {
-            EXPECT_LT(RelTol(sOut.lambdaUp[i], out.lambdaUp[i]), FP_REL_TOL) << sOut.lambdaUp[i];
+            EXPECT_LT(RelTol(sOut.lambdaUp[i], out.lambdaUp[i]), FP_REL_TOL) << sOut.lambdaUp[i] << " " << i;
         }
     }
 }
