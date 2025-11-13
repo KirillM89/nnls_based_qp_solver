@@ -31,6 +31,7 @@ std::vector<fp_t> lambdaC;
 std::vector<fp_t> lambdaLw;
 std::vector<fp_t> lambdaUp;
 */
+
 namespace SIMPLE_1_NO_BOUNDS {
     // min 0.5 * (x1^2 + x2^2); x2 >= 1.0
     // sol (0.0, 1.0) lam = 1.0
@@ -121,7 +122,6 @@ namespace SIMPLE_9_NO_BOUNDS {
     Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
     Output out{ true, 1, 2, 11.5, {2.0, 3.0}, {3.0, 4.0}, {}, {} };
 }
-
 namespace SIMPLE_1_LW_BOUNDS {
     // min 0.5 * (x1^2 + x2^2); x1 >= 1.0, x2 >= -1.0
     // sol (0.0, 1.0) lam = 1.0, 0.0
@@ -134,8 +134,6 @@ namespace SIMPLE_1_LW_BOUNDS {
     Output out{ true, 0, 1, 0.5, {1.0, 0.0}, {}, {1.0, 0.0} ,{} };
 }
 namespace SIMPLE_2_LW_BOUNDS {
-    // min 0.5 * (x1^2 + x2^2); x1 >= 1.0, x2 >= 5.0
-    // sol (1.0, 5.0) lam = 1.0, 0.0
     const matrix_t H(GetIdentity(2));
     const std::vector<fp_t> c = { 0.0, 0.0 };
     const matrix_t A = {};
@@ -145,8 +143,6 @@ namespace SIMPLE_2_LW_BOUNDS {
     Output out{ true, 1, 2, 13.0, {1.0, 5.0}, {}, {1.0, 5.0} ,{} };
 }
 namespace SIMPLE_3_LW_BOUNDS {
-    // min 0.5 * (x1^2 + x2^2); x1 >= 1.0e7, x2 >= 5.0
-    // sol (1.0, 5.0) lam = 1.0, 0.0
     const matrix_t H(GetIdentity(2));
     const std::vector<fp_t> c = { 0.0, 0.0 };
     const matrix_t A = {};
@@ -156,14 +152,111 @@ namespace SIMPLE_3_LW_BOUNDS {
     Output out{ true, 1, 2, 0.5 * (1.0e14 + 25), {1.0e7, 5.0}, {}, {1.0e7, 5.0} ,{} };
 }
 namespace SIMPLE_1_UP_BOUNDS {
-    // min 0.5 * (x1^2 + x2^2); x2 >= 1.0
-    // sol (0.0, 1.0) lam = 1.0
     const matrix_t H(GetIdentity(2));
     const std::vector<fp_t> c = { 0.0, 0.0 };
-    const matrix_t A = { { 0.0, -1.0 } };
-    const std::vector<fp_t> b = { -1.0 };
-    Input in{ GetIdentity(2), A, b, c, {}, {} ,0 };
-    Output out{ true, 1, 1, 0.5, {0.0, 1.0}, {1.0}, {}, {} };
+    const matrix_t A = {};
+    const std::vector<fp_t> b = {};
+    const std::vector<fp_t> up = { -1.0, 1.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, up, 0};
+    Output out{ true, 0, 1, 0.5, {-1.0, 0.0}, {}, {} ,{1.0, 0.0} };
+}
+namespace SIMPLE_2_UP_BOUNDS {
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 0.0, 0.0 };
+    const matrix_t A = {};
+    const std::vector<fp_t> b = {};
+    const std::vector<fp_t> up = { -1.0, -5.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, up, 0};
+    Output out{ true, 1, 2, 13.0, {-1.0, -5.0}, {}, {},  { 1.0, 5.0 }};
+}
+namespace SIMPLE_3_UP_BOUNDS {
+    const matrix_t H(GetIdentity(2));
+    const std::vector<fp_t> c = { 0.0, 0.0 };
+    const matrix_t A = {};
+    const std::vector<fp_t> b = {};
+    const std::vector<fp_t> up = {-1.0e7, -5.0 };
+    Input in{ GetIdentity(2), A, b, c, {}, up, 0};
+    Output out{ true, 1, 2, 0.5 * (1.0e14 + 25), {-1.0e7, -5.0}, {}, {} ,{1.0e7, 5.0}};
+}
+namespace LW_UP_CONSTRAINTS_1 {
+    matrix_t H = {{2.0, -2.0, 0.0}, {-2.0, 4.0, -4.0}, {0.0, -4.0, 9.0}};
+    matrix_t A = {{1.0, 1.0, 1.0}};
+    std::vector<fp_t> b = { 10.0 };
+    std::vector<fp_t> up = { {5.0 ,5.0, 5.0} };
+    Input in{H, A, b, {0.0, 0.0, 0.0}, {}, up, 0};
+    Output out{ true, 0, 0, 0, {0.0, 0.0, 0.0}, {0.0}, {} ,{0.0, 0.0, 0.0} };     
+}
+namespace LW_UP_CONSTRAINTS_2 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = {{ 1.0, 1.0 } };
+    std::vector<fp_t> b = {-1.0 };
+    std::vector<fp_t> up = { {-2.0, 50.0} };
+    Input in{ H, A, b, {0.0, 0.0}, {}, up, 0 };
+    Output out{true, 0, 1, 2.0, {-2.0, 0.0}, {0.0}, {} ,{2.0, 0.0} };
+}
+namespace LW_UP_CONSTRAINTS_3 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = {};
+    std::vector<fp_t> b = {};
+    std::vector<fp_t> up = { {-2.0, 50.0} };
+    Input in{ H, A, b, {0.0, 0.0}, {}, up, 0 };
+    Output out{ true, 0, 1, 2.0, {-2.0, 0.0}, {}, {} ,{2.0, 0.0} };
+}
+namespace LW_UP_CONSTRAINTS_4 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = { { 1.0, 1.0 } };
+    std::vector<fp_t> b = { -1.0 };
+    Input in{ H, A, b, {0.0, 0.0}, {}, {}, 0};
+    Output out{ true, 1, 1, .25, {-0.5, -0.5}, {0.5}, {} ,{} };
+}
+namespace LW_UP_CONSTRAINTS_5 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = { { 1.0, 1.0 } };
+    std::vector<fp_t> b = { -1.0 };
+    std::vector<fp_t> up = { {-1.0, 50.0} };
+    Input in{ H, A, b, {0.0, 0.0}, {}, up, 0 };
+    Output out{ true, 0, 1, 0.5, {-1.0, 0.0}, {0.0}, {} ,{1.0, 0.0} };
+}
+namespace LW_UP_CONSTRAINTS_6 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = { { 1.0, 1.0 } };
+    std::vector<fp_t> b = { -1.0 };
+    std::vector<fp_t> up = { {-0.5, 50.0} };
+    Input in{ H, A, b, {0.0, 0.0}, {}, up, 0 };
+    Output out{ true, 0, 1, 0.25, {-0.5, -0.5}, {0.5}, {} ,{0.0, 0.0} };
+}
+namespace LW_UP_CONSTRAINTS_7 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = { { 1.0, 1.0 }, {1.0, 0.0 }, {0.0, 1.0} };
+    std::vector<fp_t> b = { -1.0, -1.5, 1.0 };
+    std::vector<fp_t> up = {};
+    Input in{ H, A, b, {0.0, 0.0}, {}, up, 0 };
+    Output out{ true, 0, 1, 1.125, {-1.5, 0.0}, {0.0, 1.5, 0.0}, {} ,{} };
+}
+
+namespace REAL_1 {
+    const matrix_t H(GetIdentity(12));
+    const std::vector<fp_t> c = {2.17299e6, -13162.7, 1.36145e6, 557966.0, 1.46127e6, 6.23872e6, 24368.4, -24368.4, -14567.7, -9040.55, 46731.1, 36536.2};
+    const matrix_t A = 
+    { 
+       {1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
+       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0},
+       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0} 
+    };
+    const std::vector<fp_t> b = { 1.0e-7, 1.0e-7, 1.0e-7};
+    const std::vector<fp_t> lw = {-10.00553, -5.9893, -0.0107047, 0.367332,  0.0107047, 0.0107047, -0.989295,  -10.0, -1.0e-8, -1.0e-8, -1.0e-8, 1.0e-8};
+    const std::vector<fp_t> up = { 9998.4, 0.0107047, 9998.69, 9998.73, 0.189295, 0.189295, 0.0107047, 10.0, 50.0, 50.0, 50.0, 50.0};
+
+    const std::vector<fp_t> x = { -10.00553000112996, 0.01070470000195201, -0.01070469967089594, 9.994825300178494, 0.01070470036938787,
+        0.01070469990372658, -0.9892949999994021, 9.99789335764945e-08, 50.00000000000912, 50.00000000000366,
+        -9.989889804273847e-09, 9.989889804273847e-09 };
+    const std::vector<fp_t> dualA = {-557975.9948253002, 582344.3948252, 0.0};
+    const std::vector<fp_t> dualL = {1615003.999644698, 0.0, 803473.9944700002, 0.0, 903294.0158794001, 5680744.0158794, 24367.410705,
+        0.0, 0.0, 0.0, 46731.09999999001, 36536.20000000999};
+    const std::vector<fp_t> dualU = {0.0, 13162.68929529999, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 14517.69999999998, 8990.549999999992, 0.0, 0.0};
+    const fp_t cost = -17299352.22259864;
+    Input in{ H, A, b, c, lw, up, 0};
+    Output out{true, 1, 12, cost, x, dualA, dualL, dualU};
 }
 namespace SIMPLE_2 {
     const matrix_t H= {{1.0 , 0.0}, {0.0, 1.0}};

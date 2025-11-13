@@ -131,7 +131,7 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
     }
     return ld;
 }
-void Core::ComputeLS4Constraints(const matrix_t& ld,  const Input& problem) {
+void Core::FillM(const matrix_t& ld,  const Input& problem) {
     const std::size_t nV = config.largeBoundsPenalty ? nVariables - 1 : nVariables;
     std::size_t nC = (config.largeBoundsPenalty ? nPConstraints - 1 : nPConstraints);
     nC = nPConstraints ? nC : 1;
@@ -232,81 +232,8 @@ void Core::ComputeLS4Constraints(const matrix_t& ld,  const Input& problem) {
         }
     }
 }
-void Core::ComputeLS4Bounds(const matrix_t& ld, const Input& problem) {
-    const std::size_t nV = config.largeBoundsPenalty ? nVariables - 1 : nVariables;
-    const std::size_t nC = config.largeBoundsPenalty ? nPConstraints - 1 : nPConstraints;
-    std::size_t iBnd = nC;
-    for (unsg_t c = 0; c < nV; ++c) {
-        bool scaleU = false;
-        bool scaleL = false;
-        double norm2 = 0.0;
-        std::size_t iUp = 0;
-        std::size_t iLw = 0;
-        if (nUpBounds) {
-            std::copy(ld[c].begin(), ld[c].end(), ws.M[iBnd].begin());   // M part corresponding to bounds
-            double val = problem.up[c];
-            if (config.largeBoundsPenalty) {
-                int stat = 1;
-                AddExtraComponent(iBnd, val, stat);
-            } else {
-                if (val > BTOL) {
-                    val = BTOL;
-                } else if (val < -BTOL) {
-                    val = -BTOL;
-                } else {
-                    scaleU = true;
-                }
-            }
-            ws.s[iBnd] = val;
-            iUp = iBnd++;
-        }
-        if (nLwBounds) {
-            const std::vector<double>& minLd = -ld[c];
-            std::copy(minLd.begin(), minLd.end(), ws.M[iBnd].begin());
-            double val = -problem.lw[c];
-            if (config.largeBoundsPenalty) {
-                int stat = 1;
-                AddExtraComponent(iBnd, val, stat);
-            }
-            else {
-                if (val > BTOL) {
-                    val = BTOL;
-                } else if (val < -BTOL) {
-                    val = -BTOL;
-                } else {
-                    scaleL = true;
-                }
-            }
-            ws.s[iBnd] = val;
-            iLw = iBnd++;
-        }
-         
-        for (unsg_t v = 0; v < nVariables; ++v) {
-            if (nUpBounds) {
-                ws.M[iUp][v] *= ws.Chol[v];
-                ws.s[iUp] += ws.M[iUp][v] * ws.v[v];
-            }
-            if (nLwBounds) {
-                ws.M[iLw][v] *= ws.Chol[v];
-                ws.s[iLw] += ws.M[iLw][v] * ws.v[v];
-            }
-            norm2 += ws.M[iBnd - 1][v] * ws.M[iBnd - 1][v];
-        }
-        if (nUpBounds) {
-            ws.lambda[iUp] = norm2;
-            UpdateScaleFactor(iUp);
-        } 
-        if (nLwBounds) {
-            ws.lambda[iLw] = norm2;
-            UpdateScaleFactor(iLw);
-        }
-    }
-}
 
 void Core::Scale() { 
-    if (isSame(scaleFactorDB, 1.0)) {
-        //scaleFactorDB = 10. * mEps;
-    }
     scaleFactorDB = sqrt(scaleFactorDB);
     config.origPrimalFsb *= scaleFactorDB;
     const double minS = g_GetMachineEps();
@@ -364,12 +291,7 @@ bool Core::PrepareNNLS(const Input &problem) {
     if (initStatus != InitStageStatus::SUCCESS) {
         return false;
     }
-    //if (nPConstraints) {
-        ComputeLS4Constraints(ld, problem);
-   // }
-    //if (nUpBounds | nLwBounds) {
-    //    ComputeLS4Bounds(ld, problem);
-    //}
+    FillM(ld, problem);
     if (config.largeBoundsPenalty) {
         ws.M.back().back() = -1.0;
     }
@@ -481,7 +403,7 @@ bool Core::IsCandidateForNewActive(unsg_t indx, double toCompare, bool skip) {
     }
     return res;
 }
-unsg_t Core::SelectNewActiveComponent() {
+void Core::SelectNewActiveComponent() {
     //Algorith guarantees that all dual on active set must be nonegative
     //but they can be negative due to numerical errors. Such components will be set to zero
     double newActive = std::numeric_limits<double>::max();
@@ -492,7 +414,6 @@ unsg_t Core::SelectNewActiveComponent() {
             newActive = ws.dual[i];
         }
     }
-    return newActiveIndex;
 }
 
 unsg_t Core::SolvePrimal() {
@@ -522,7 +443,6 @@ unsg_t Core::SolvePrimal() {
     linSolverTimes.emplace_back();
     linSolverTimes.back().us = timer->Ticks();
     linSolverTimes.back().nConstraints = nActive;
-    // TODO: check quality
     return lsOutput.nDNegative;
 }
 
@@ -555,7 +475,6 @@ bool Core::MakeLineSearch() {
         }
     }
     assert(nBlocking <= 1);
-    std::cout << "step " << minStep << std::endl;
     if (nonZeroStep) {
         // At least for one component LS step was found
         gammaCorrection = 0.0;
@@ -608,12 +527,12 @@ void Core::UnscaleD() {
     }
 }
 void Core::UpdateGammaOnPrimalIteration() {
-    if (config.gammaUpdate == true) {
+    if (config.gammaUpdate) {
         gamma = std::fabs(gamma - gammaCorrection);
     }
 }
 void Core::UpdateGammaOnDualIteration() {
-    if (config.gammaUpdate == true) {
+    if (config.gammaUpdate) {
         gamma += std::fabs(ws.s[newActiveIndex]);
     }
 }
@@ -662,13 +581,11 @@ void Core::ComputeOrigSolution() {
         std::copy(ws.aux.begin(), ws.aux.begin() + nPVariables, ws.x.begin());
     }
     */
+    
     for (std::size_t i = 0; i < nPVariables; ++i) {
         ws.x[i] *= invScaleFactor;
     }
-
-
 }
-
 
 void Core::FillOutput() {
     output.dualExitStatus = static_cast<unsigned char>(dualExitStatus);
@@ -795,6 +712,7 @@ void Core::Solve() {
         AddToActiveSet(newActiveIndex);
         primalIteration = 0;
         primalExitStatus = PrimalLoopExitStatus::UNKNOWN;
+        nPrimalIterations = ws.activeConstraints.size();
         while (primalIteration < nPrimalIterations) {
             if (ws.activeConstraints.empty()) {
                 primalExitStatus = primalIteration == 0 ? PrimalLoopExitStatus::EMPTY_ACTIVE_SET_ON_ZERO_ITERATION :
