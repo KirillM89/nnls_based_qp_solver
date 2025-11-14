@@ -415,7 +415,6 @@ void Core::SelectNewActiveComponent() {
         }
     }
 }
-
 unsg_t Core::SolvePrimal() {
     timer->Ticks();
     const std::size_t nActive = ws.activeConstraints.size();
@@ -556,35 +555,12 @@ void Core::ComputeOrigSolution() {
     for (std::size_t i = 0; i < nPVariables; ++i) {
         double cx = ws.x[i] / ws.Chol[i];
         cost += (0.5 * cx + ws.v[i]) * cx;
+        ws.x[i] *= invScaleFactor;
     }
     cost *= invScaleFactor * invScaleFactor;
     for (std::size_t i = 0; i < nConstraints; ++i) {
         ws.lambda[i] *= (-ws.aux[i] * invScaleFactor);
-    }
-    //recompute x
-    /*
-    if (nUpBounds | nLwBounds) {
-        for (std::size_t i = 0; i < nPVariables; ++i) {
-            ws.aux[i] = 0.0;
-            std::size_t r = nPConstraints + ((nUpBounds & nLwBounds) ? 2 * i : i);
-            for (std::size_t j = 0; j < nPVariables; ++j) {
-                if (nLwBounds && !nUpBounds) {
-                    ws.aux[i] -= (ws.M[r][j] * ws.x[j] / ws.Chol[j]);
-                } else {
-                    ws.aux[i] += (ws.M[r][j] * ws.x[j] / ws.Chol[j]);
-                }
-            }
-            if (!isSame(ws.aux[i], 0.0)) {
-                ws.aux[i] /= (ws.aux[r] * scaleFactorDB);
-            }
-        }
-        std::copy(ws.aux.begin(), ws.aux.begin() + nPVariables, ws.x.begin());
-    }
-    */
-    
-    for (std::size_t i = 0; i < nPVariables; ++i) {
-        ws.x[i] *= invScaleFactor;
-    }
+    } 
 }
 
 void Core::FillOutput() {

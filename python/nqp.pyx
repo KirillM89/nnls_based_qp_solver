@@ -91,6 +91,6 @@ def Solve(double[:,:]H, double[:]c, double[:,:]A = None, double[:]b = None, \
     solver.Init(configDefault)
     solver.SetProblem(problem)
     solver.Solve()
-    out = solver.GetOutput()
-    print(out.cost)
+    cdef Output out = solver.GetOutput()
+    return (out.dualExitStatus, out.cost, out.x, out.lambdaC, out.lambdaLw, out.lambdaUp)
  
