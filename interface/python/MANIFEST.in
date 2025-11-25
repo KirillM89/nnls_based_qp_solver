@@ -1,0 +1,4 @@
+include source/include/*
+include source/src/*
+include nqp.pyx
+include nqp.pxd
