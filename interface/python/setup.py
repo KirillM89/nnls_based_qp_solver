@@ -11,11 +11,6 @@ from setuptools import setup, find_packages, Extension
 from shutil import copyfile, copytree, rmtree
 from Cython.Distutils import build_ext 
 from Cython.Build import cythonize
-
-#sources = ['callback.cpp', 'core.cpp', 'decorator.cpp', 'linSolvers.cpp', \
-#           'log.cpp', 'timers.cpp', 'utils.cpp']
-#priv_headers = ['core.h', 'linSolvers.h', 'log.h', 'timers.h', 'utils.h', 'core_types.h']
-#pub_headers = ['types.h', 'decorator.h', 'callback.h']
 cwd = os.getcwd()
 src_copy = os.path.join(cwd, 'source')
 if not os.path.exists(src_copy):
@@ -50,7 +45,7 @@ setup(name='nqp',
       description='NQP solver',
       ext_modules=cythonize(cython_ext),
       cmdclass={'build_ext': build_ext},
-      #zip_safe=False,
+      zip_safe=False,
       )
 
 if os.path.exists(src_copy):
