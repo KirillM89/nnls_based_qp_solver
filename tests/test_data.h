@@ -232,6 +232,51 @@ namespace LW_UP_CONSTRAINTS_7 {
     std::vector<fp_t> up = {};
     Input in{ H, A, b, {0.0, 0.0}, {}, up, 0 };
     Output out{ true, 0, 1, 1.125, {-1.5, 0.0}, {0.0, 1.5, 0.0}, {} ,{} };
+} 
+namespace HS21 {
+    matrix_t H = { {0.02, 0.0}, {0.0, 2.0} };
+    matrix_t A = { {-10.0, 1} };
+    std::vector<fp_t> c = { 0, 0 };
+    std::vector<fp_t> b = { -10.0 };
+    std::vector<fp_t> lw = { 2.0, -50.0 };
+    std::vector<fp_t> up = { 50.0, 50.0 };
+    Input in{ H, A, b, c, lw, up, 0 };
+    Output out{ true, 0, 1, 0.04, {2.0, 0.0}, {0.0}, {0.04, 0}, {0, 0} };
+}
+namespace TEST_PROBLEM_1 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = { {-10.0, 1} };
+    std::vector<fp_t> c = { 0, 0 };
+    std::vector<fp_t> b = { -10.0 };
+    std::vector<fp_t> lw = { 2.0, -50.0 };
+    std::vector<fp_t> up = { 50.0, 50.0 };
+    Input in{ H, A, b, c, lw, up, 0 };
+    Output out{ true, 0, 1, 2, {2.0, 0.0}, {0.0}, {2.0, 0}, {0, 0} };
+}
+namespace TEST_PROBLEM_2 {
+    matrix_t H = { {2.0, 0.0}, {0.0, 10.0}};
+    matrix_t A = { {-10.0, 1} };
+    std::vector<fp_t> c = { 0, 0 };
+    std::vector<fp_t> b = { -10.0 };
+    std::vector<fp_t> lw = { 2.0, -50.0 };
+    std::vector<fp_t> up = { 50.0, 50.0 };
+    Input in{ H, A, b, c, lw, up, 0 };
+    Output out{ true, 0, 1, 4.0, {2.0, 0.0}, {0.0}, {4.0, 0}, {0, 0} };
+}
+namespace TEST_PROBLEM_3 {
+    matrix_t H = { {2.0, 0.0}, {0.0, 10.0} };
+    std::vector<fp_t> c = { 0, 0 };
+    std::vector<fp_t> lw = { 2.0, -50.0 };
+    std::vector<fp_t> up = { 50.0, 50.0 };
+    Input in{ H, {}, {}, c, lw, up, 0};
+    Output out{ true, 0, 1, 4.0, {2.0, 0.0}, {}, {4.0, 0}, {0, 0} };
+}
+namespace TEST_PROBLEM_4 {
+    matrix_t H = { {2.0, 0.0}, {0.0, 10.0} };
+    std::vector<fp_t> c = { 0, 0 };
+    std::vector<fp_t> lw = { 1.0, -50.0 };
+    Input in{ H, {}, {}, c, lw, {}, 0};
+    Output out{ true, 0, 1, 1.0, {1.0, 0.0}, {}, {2.0, 0}, {} };
 }
 
 namespace REAL_1 {

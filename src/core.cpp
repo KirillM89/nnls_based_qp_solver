@@ -185,8 +185,7 @@ void Core::FillM(const matrix_t& ld,  const Input& problem) {
                 else {
                     if (val > BTOL) {
                         val = BTOL;
-                    }
-                    else if (val < -BTOL) {
+                    } else if (val < -BTOL) {
                         val = -BTOL;
                     }
                 }
