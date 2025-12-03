@@ -90,10 +90,10 @@ void Core::CheckFactorization(const matrix_t& ld, const matrix_t& H, const std::
 matrix_t Core::ComputeLDLT(const matrix_t& H) {
     matrix_t ld(H);
     const std::size_t nV = H.size();
-    std::vector<int> pmt(nV, -1.0); // must be filled with -1.0 by default
+    std::vector<int> pmt(nV, -1); // must be filled with -1.0 by default
     std::size_t nZr, nNg; //number of zero and negative diagonal elements in matrix D of LDL_T decomposition
     const bool inPlaceDZeroCor = false;
-    unsigned char rStat  = InPlaceLdlt(ld, pmt, nZr, nNg, true, inPlaceDZeroCor);
+    unsigned char rStat  = InPlaceLdlt(ld, pmt, nZr, nNg, false, inPlaceDZeroCor);
     //continue if D has only positive values or zero values with option zeroDCor==true
     if ((rStat == 1u && !config.posDefCorrection) || rStat > 1u) {
         if (rStat == 1u) {
@@ -123,7 +123,8 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
         InvertL(ld); // L_-1 will be saved in upper diagonal part
                      // lower diagonal part will be filled with zeros
                      // diagonal will be filled with 1.0
-        for (int v = nV - 1; v >= 0; --v) {
+        //for (int v = nV - 1; v >= 0; --v) {
+        for (int v = 0; v < nV; ++v) {
             if (pmt[v] != -1) {
                 std::swap(ld[v], ld[pmt[v]]); //P * L_-T
             }
@@ -555,6 +556,7 @@ void Core::ComputeOrigSolution() {
         double cx = ws.x[i] / ws.Chol[i];
         cost += (0.5 * cx + ws.v[i]) * cx;
         ws.x[i] *= invScaleFactor;
+    
     }
     cost *= invScaleFactor * invScaleFactor;
     for (std::size_t i = 0; i < nConstraints; ++i) {

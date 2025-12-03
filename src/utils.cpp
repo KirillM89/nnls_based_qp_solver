@@ -159,7 +159,7 @@ namespace QP_NNLS {
         const fp_t dCorrection = 2.0 * mEps;
         const fp_t machZero = 0.1 * mEps;
         for (std::size_t c = 0; c < n; ++c) { // by columns
-            P[c] = -1.0;
+   
             if (pvt) {
                 std::size_t iMax = c;
                 fp_t dmax = M[c][c];

@@ -278,6 +278,21 @@ namespace TEST_PROBLEM_4 {
     Input in{ H, {}, {}, c, lw, {}, 0};
     Output out{ true, 0, 1, 1.0, {1.0, 0.0}, {}, {2.0, 0}, {} };
 }
+namespace TEST_PROBLEM_5 {
+    matrix_t H = { {2.0, 0.0}, {0.0, 10.0} };
+    std::vector<fp_t> c = { 0, 0 };
+    std::vector<fp_t> up = { -1.0, 50.0 };
+    Input in{ H, {}, {}, c, {}, up, 0};
+    Output out{ true, 0, 1, 1.0, {-1.0, 0.0}, {}, {}, {2.0, 0} };
+}
+namespace TEST_PROBLEM_6 {
+    matrix_t H = { {10.0, 0.0}, {0.0, 2.0} };
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { -1.0, 50.0 };
+    std::vector<fp_t> c = { 0, 0 };
+    Input in{ H, A, b, c, {}, {}, 0};
+    Output out{ true, 0, 1, 5.0, {-1.0, 0.0}, {10.0, 0}, {}, {} };
+}
 
 namespace REAL_1 {
     const matrix_t H(GetIdentity(12));
