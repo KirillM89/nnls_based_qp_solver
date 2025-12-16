@@ -9,7 +9,6 @@
 namespace QP_NNLS {
 enum class LinSolverType {
     CUMULATIVE_LDLT = 0,
-    //CUMULATIVE_EG_LDLT,
     DYNAMIC_LDLT,
     MSS1,
 };
@@ -41,49 +40,11 @@ enum class DualLoopExitStatus {
     UNKNOWN
 };
 
-
 struct LinSolverOutput {
     bool emptyInput = false;
     unsg_t nDNegative = 0; // number of d<=0 in LDLT
-    std::vector<double> solution;
+    std::vector<fp_t> solution;
     std::list<unsg_t> indices;
-};
-
-struct ActiveSetUpdateSettings {
-    int rptInterval = 0;
-    bool rejectSingular = false;
-};
-
-struct CoreSettings : public ActiveSetUpdateSettings  {
-    LinSolverType linSolverType = LinSolverType::CUMULATIVE_LDLT;
-    unsg_t nDualIterations = 1000;
-    unsg_t nPrimalIterations = 100;
-    unsg_t logLevel = 0u;
-    double nnlsResidNormFsb = 1.0e-12; // infeasibility criterion
-    double origPrimalFsb = 1.0e-6;     // Ax - b <= origPrimalFsb
-    double nnlsPrimalZero = 1.0e-30;   // x==0 if |x| < nnlsPrimalZero
-    double prLtZero = 1.0e-30;         // x < 0 if x < prLtZero
-    bool gammaUpdate = true;
-    bool largeBoundsPenalty = false;
-    bool zeroDCor = true;
-    bool checkFactorization = false;
-};
-
-struct Settings : public CoreSettings {
-//RESERVED
-};
-
-struct DenseQPProblem {
-    // 0.5 * x_T * H * x + c_T * x
-    // Ax <= b; lw <= x <= up
-    // First nEqConstraints in A are equality constraints
-    matrix_t H;
-    matrix_t A;
-    std::vector<double> b;
-    std::vector<double> c;
-    std::vector<double> up;
-    std::vector<double> lw;
-    unsg_t nEqConstraints = 0;
 };
 
 struct LinSolverTime {
@@ -91,23 +52,6 @@ struct LinSolverTime {
     unsg_t nConstraints;
 };
 
-struct SolverOutput {
-    DualLoopExitStatus dualExitStatus;
-    PrimalLoopExitStatus primalExitStatus;
-    unsg_t mDef;
-    unsg_t nDualIterations;
-    unsg_t nVariables;
-    unsg_t nConstraints;
-    unsg_t nEqConstraints;
-    double maxViolation;
-    double dualityGap;
-    double cost;
-    std::vector<double> x;
-    std::vector<double> lambda;
-    std::vector<double> lambdaLw;
-    std::vector<double> lambdaUp;
-    std::vector<double> violations;
-};
 } //
 
 #endif // CORE_TYPES_H

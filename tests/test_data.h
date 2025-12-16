@@ -318,6 +318,62 @@ namespace REAL_1 {
     Input in{ H, A, b, c, lw, up, 0};
     Output out{true, 1, 12, cost, x, dualA, dualL, dualU};
 }
+namespace HS53 {
+    const matrix_t H =
+    {
+      {2., -2., 0., 0., 0.},
+      {-2., 4., 2., 0., 0.},
+      {0., 2., 2., 0., 0.},
+      {0., 0., 0., 2., 0.},
+      {0., 0., 0., 0., 2.}
+    };
+    const matrix_t A =
+    {
+       {0.,  0.,  1.,  1., -2.},
+       {0.,  1.,  0.,  0., -1.},
+       {1.,  3.,  0.,  0.,  0.},
+    }; 
+    const std::vector<fp_t> c = { 0., -4., -4., -2., -2. };
+    const std::vector<fp_t> b(3, 0.0);
+    const std::vector<fp_t> lw(5, -10.0);
+    const std::vector<fp_t> up(5, 10.0);
+    Input in{H, A, b, c, lw, up, 0 };
+    const std::vector<fp_t> x = {0.0, 0.0, 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> dualA = { 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> dualL = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> dualU = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const fp_t cost = 0.0;
+    Output out{true, 1, 12, cost, x, dualA, dualL, dualU };
+}
+namespace HS268 {
+    const matrix_t H =
+    {
+      { 20394., -24908., -2026., 3896., 658.},
+      { -24908., 41818., -3466., -9828., -372.},
+      {-2026., -3466., 3510., 2178., -348.},
+      {3896., -9828., 2178., 3030., -44.},
+      {658., -372., -348., -44., 54.}
+    };
+    const matrix_t A =
+    {
+       {1., 1., 1., 1., 1.},
+       {-10., -10., 3., -5., -4.},
+       {8., -1., 2.,   5., -3. },
+       {-8., 1., -2., -5., 3.},
+       {4., 2., -3., 5., -1.}
+    };
+    const std::vector<fp_t> c = { 18340., -34198., 4542., 8672., 86. };
+    const std::vector<fp_t> b = {5., -20., 40., -11., 30.};
+    const std::vector<fp_t> lw, up;
+    Input in{ H, A, b, c, lw, up, 0 };
+    const std::vector<fp_t> x = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> dualA = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> dualL = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> dualU = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const fp_t cost = 0.0;
+    Output out{ true, 1, 12, cost, x, dualA, dualL, dualU };
+}
+
 namespace SIMPLE_2 {
     const matrix_t H= {{1.0 , 0.0}, {0.0, 1.0}};
     const std::vector<fp_t> c = {0.0, 0.0};

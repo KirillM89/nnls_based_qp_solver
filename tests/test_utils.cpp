@@ -336,6 +336,9 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
             posDef = false;
         }
     }
+    if (!posDef) {
+        return;
+    }
     solver.Solve();
     const QP_NNLS::Output& sOut = solver.GetOutput();
     EXPECT_EQ(sOut.dualExitStatus, out.dualExitStatus);

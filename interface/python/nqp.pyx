@@ -85,11 +85,12 @@ def Solve(double[:,:]H, double[:]c, double[:,:]A = None, double[:]b = None, \
         ii = <unsigned int>i  
         problem.up[ii] = up[i]       
     problem.nEqConstraints = nEq
-    print("problem:", "nx",n,"nC",nc,"nLw",nl,"nUp",nup)
+    print("problem:", "nx", n, "nC", nc, "nLw", nl, "nUp", nup)
     cdef Configuration configDefault
     cdef QPNNLS solver
     solver.Init(configDefault)
-    solver.SetProblem(problem)
+    if not solver.SetProblem(problem):
+        return (1, None, None, None, None, None)
     solver.Solve()
     cdef Output out = solver.GetOutput()
     return (out.dualExitStatus, out.cost, np.array(out.x), np.array(out.lambdaC),

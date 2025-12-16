@@ -77,10 +77,10 @@ void Core::CheckFactorization(const matrix_t& ld, const matrix_t& H, const std::
     }
     matrix_t HF(H);
     M1M2T(lByD, ldt, HF);
-    const double errTol = 1.0e-7;
+    const fp_t errTol = 1.0e-7;
     for (std::size_t i = 0; i < nV; ++i) {
         for (std::size_t j = 0; j < nV; ++j) {
-            const double diff = H[i][j] - HF[i][j];
+            const fp_t diff = H[i][j] - HF[i][j];
             if (std::fabs(diff) >= errTol) {
                 std::cout << "FACTORIZATION ERROR: " << diff << std::endl;
             }
@@ -108,10 +108,10 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
        //     CheckFactorization(ld, H, pmt);
        // }
         output.isPositiveDefinite = true;
-        const double minChol = 2.0 * mEps; // min diagonal value
-        const double maxCondNumInv = sqrt(mEps);
-        const double maxEgVal = ld[0][0];
-        const double minEgVal = maxCondNumInv * maxEgVal;
+        const fp_t minChol = 2.0 * mEps; // min diagonal value
+        const fp_t maxCondNumInv = sqrt(mEps);
+        const fp_t maxEgVal = ld[0][0];
+        const fp_t minEgVal = maxCondNumInv * maxEgVal;
         for (unsg_t v = 0; v < nV; ++v) {
             if (config.posDefCorrection && ld[v][v] < minEgVal) {  // replace all values which violate condition number
                 ld[v][v] = std::fmax(minChol, maxCondNumInv *  minEgVal);  // (CondNum / maxCondNum) * minEgVal = (maxEgVal / (minEgVal * maxCondNum)) * minEgVal = maxEgVal / maxCondNum
@@ -136,10 +136,10 @@ void Core::FillM(const matrix_t& ld,  const Input& problem) {
     const std::size_t nV = config.largeBoundsPenalty ? nVariables - 1 : nVariables;
     std::size_t nC = (config.largeBoundsPenalty ? nPConstraints - 1 : nPConstraints);
     nC = nPConstraints ? nC : 1;
-    double norm2C = 0.0;
+    fp_t norm2C = 0.0;
     for (std::size_t c = 0; c < nC; ++c) {
         if (nPConstraints) {
-            double b = problem.b[c];
+            fp_t b = problem.b[c];
             int stat = 1;
             bool scale = false;
             if (config.largeBoundsPenalty) {
@@ -156,12 +156,12 @@ void Core::FillM(const matrix_t& ld,  const Input& problem) {
         }
         std::size_t iBnd = nPConstraints;
         for (std::size_t v = 0; v < nV; ++v) {
-            double norm2B = 0.0;
+            fp_t norm2B = 0.0;
             std::size_t iUp = 0;
             std::size_t iLw = 0;
             if (nUpBounds) {
                 std::copy(ld[v].begin(), ld[v].end(), ws.M[iBnd].begin());   // M part corresponding to bounds
-                double val = problem.up[v];
+                fp_t val = problem.up[v];
                 if (config.largeBoundsPenalty) {
                     int stat = 1;
                     AddExtraComponent(iBnd, val, stat);
@@ -176,9 +176,9 @@ void Core::FillM(const matrix_t& ld,  const Input& problem) {
                 iUp = iBnd++;
             }
             if (nLwBounds) {
-                const std::vector<double>& minLd = -ld[v];
+                const std::vector<fp_t>& minLd = -ld[v];
                 std::copy(minLd.begin(), minLd.end(), ws.M[iBnd].begin());
-                double val = -problem.lw[v];
+                fp_t val = -problem.lw[v];
                 if (config.largeBoundsPenalty) {
                     int stat = 1;
                     AddExtraComponent(iBnd, val, stat);
@@ -236,19 +236,19 @@ void Core::FillM(const matrix_t& ld,  const Input& problem) {
 void Core::Scale() { 
     scaleFactorDB = sqrt(scaleFactorDB);
     config.origPrimalFsb *= scaleFactorDB;
-    const double minS = g_GetMachineEps();
+    const fp_t minS = g_GetMachineEps();
     //s scaling and ortogonalization
     for (std::size_t r = 0; r < nConstraints; ++r) {
         if (r < nVariables) {
             ws.v[r] *= scaleFactorDB;
         }
         ws.s[r] *= scaleFactorDB;
-        double fullNorm = ws.lambda[r] + ws.s[r] * ws.s[r];
+        fp_t fullNorm = ws.lambda[r] + ws.s[r] * ws.s[r];
         if (!isSame(fullNorm, 0.0)) {
-            double scaleCoef = 1.0 / sqrt(fullNorm);
+            fp_t scaleCoef = 1.0 / sqrt(fullNorm);
             ws.lambda[r] = scaleCoef;
             ws.s[r] *= scaleCoef;
-            double maxM = std::numeric_limits<double>::min();
+            fp_t maxM = std::numeric_limits<fp_t>::min();
             unsg_t iMaxM = 0;
             for (std::size_t c = 0; c < nVariables; ++c) {
                 ws.M[r][c] *= scaleCoef;
@@ -262,19 +262,19 @@ void Core::Scale() {
     }
 }
 void Core::AllocateWs() {
-    ws.primal = std::vector<double>(nConstraints, 0.0);     // primal vars for nnls problem
-    ws.dual = std::vector<double>(nConstraints, 0.0);       // dual vars for nnls problem
-    ws.zp = std::vector<double>(nConstraints, 0.0);         // aux array for compuatation of primal components on current active set
-    ws.lambda = std::vector<double>(nConstraints, 1.0);     // dual vars for orig problem
-    ws.s = std::vector<double>(nConstraints, 0.0);          // vector s = b + M * v
-    ws.aux = std::vector<double>(nConstraints, 0.0);        // auxilary array
-    ws.x = std::vector<double>(nVariables, 0.0);            // primal vars for orig problem
-    ws.v = std::vector<double>(nVariables, 0.0);            // vector v = L_-1 * c
-    ws.Chol = std::vector<double>(nVariables, 1.0);         // invert Choletsky factor
+    ws.primal = std::vector<fp_t>(nConstraints, 0.0);     // primal vars for nnls problem
+    ws.dual = std::vector<fp_t>(nConstraints, 0.0);       // dual vars for nnls problem
+    ws.zp = std::vector<fp_t>(nConstraints, 0.0);         // aux array for compuatation of primal components on current active set
+    ws.lambda = std::vector<fp_t>(nConstraints, 1.0);     // dual vars for orig problem
+    ws.s = std::vector<fp_t>(nConstraints, 0.0);          // vector s = b + M * v
+    ws.aux = std::vector<fp_t>(nConstraints, 0.0);        // auxilary array
+    ws.x = std::vector<fp_t>(nVariables, 0.0);            // primal vars for orig problem
+    ws.v = std::vector<fp_t>(nVariables, 0.0);            // vector v = L_-1 * c
+    ws.Chol = std::vector<fp_t>(nVariables, 1.0);         // invert Choletsky factor
     if (config.posDefCorrection) {
         ws.dCorrected = std::vector<bool>(nVariables, false);
     }
-    ws.M = matrix_t(nConstraints, std::vector<double>(nVariables, 0.0)); // M = A * L_-1
+    ws.M = matrix_t(nConstraints, std::vector<fp_t>(nVariables, 0.0)); // M = A * L_-1
     ws.activeConstraints.clear();
     ws.linEqConstraints.clear();
     ws.addHistory.clear();
@@ -315,16 +315,16 @@ void Core::UpdateScaleFactor(std::size_t iConstraint) {
     //real scale factor must be >= critical
     //TODO: prevent appearance of too big components !
     if (!isSame(ws.s[iConstraint], 0.0)) {
-        const double sp2 = ws.s[iConstraint] * ws.s[iConstraint];
-        const double norm2 = ws.lambda[iConstraint];
+        const fp_t sp2 = ws.s[iConstraint] * ws.s[iConstraint];
+        const fp_t norm2 = ws.lambda[iConstraint];
         for (std::size_t i = 0; i < nVariables; ++i) {
-            const double m = ws.M[iConstraint][i];
-            const double diff = m * m - minEl * norm2;
+            const fp_t m = ws.M[iConstraint][i];
+            const fp_t diff = m * m - minEl * norm2;
             //not positive diff means that it's impossible to set current m to value >= minEl
             if (isSame(m, 0.0) || diff <= 0.0) {
                 continue;
             }
-            double rat = diff / (minEl * sp2);
+            fp_t rat = diff / (minEl * sp2);
             if (rat < minEl) {
                 scaleFactorDB = 0.5 * mEps; // mEps because real scale factor is sqrt(scaleFactorDB)
             } else {
@@ -333,7 +333,7 @@ void Core::UpdateScaleFactor(std::size_t iConstraint) {
         }
     }
 }
-void Core::AddExtraComponent(unsg_t indx, double bound, int& stat) {
+void Core::AddExtraComponent(unsg_t indx, fp_t bound, int& stat) {
     if (bound >= BTOL) {
         ws.M[indx].back() = -1.0;
         ws.s[indx] = 0.0;
@@ -392,9 +392,9 @@ void Core::RmvFromActiveSet(unsg_t indx) {
         lSolver->Delete(indx);
     }
 }
-bool Core::IsCandidateForNewActive(unsg_t indx, double toCompare, bool skip) {
+bool Core::IsCandidateForNewActive(unsg_t indx, fp_t toCompare, bool skip) {
     bool res = false;
-    const double dl = ws.dual[indx];
+    const fp_t dl = ws.dual[indx];
     if (ws.activeConstraints.find(indx) != ws.activeConstraints.end() || SkipCandidate(indx)) {
         res = false;
     } else if ((dl < dualTolerance && dl < toCompare)) {
@@ -406,7 +406,7 @@ bool Core::IsCandidateForNewActive(unsg_t indx, double toCompare, bool skip) {
 void Core::SelectNewActiveComponent() {
     //Algorith guarantees that all dual on active set must be nonegative
     //but they can be negative due to numerical errors. Such components will be set to zero
-    double newActive = std::numeric_limits<double>::max();
+    fp_t newActive = std::numeric_limits<fp_t>::max();
     newActiveIndex = nConstraints; //default value
     //check inactive components
     for (unsg_t i = nEqConstraints; i < nConstraints; ++i) {
@@ -446,19 +446,19 @@ unsg_t Core::SolvePrimal() {
 }
 
 bool Core::MakeLineSearch() {
-    double minStep = 1.0;
+    fp_t minStep = 1.0;
     bool nonZeroStep = false;
     std::size_t iBlocking = nConstraints;
     std::size_t nBlocking = 0;
-    const double strictZeroTol = 1.0e-30;
+    const fp_t strictZeroTol = 1.0e-30;
     // step = 0: primal_i = 0 for any zp_i
     // but all the primal except primal for new active set index must be strict positive
     // so step can be zero only if zp for new active component is nonpositive it's blocking component
     for (auto indx: ws.negativeZp) {
-        const double primal = ws.primal[indx];
-        const double denominator = primal - ws.zp[indx];
+        const fp_t primal = ws.primal[indx];
+        const fp_t denominator = primal - ws.zp[indx];
         if (!isSame(denominator, 0.0, strictZeroTol)) { // zp < 0
-            double rat = primal / denominator;
+            fp_t rat = primal / denominator;
             assert(rat >= 0.0);
             if (!isSame(primal, 0.0, strictZeroTol)) {
                 minStep = std::fmin(minStep, rat);
@@ -537,14 +537,14 @@ void Core::UpdateGammaOnDualIteration() {
 }
 
 void Core::ComputeOrigSolution() {
-    const double sty = DotProduct(ws.s, ws.primal, ws.activeConstraints);
-    const double lambdaTerm = -1.0 / (gamma + sty);
+    const fp_t sty = DotProduct(ws.s, ws.primal, ws.activeConstraints);
+    const fp_t lambdaTerm = -1.0 / (gamma + sty);
     std::copy(ws.lambda.begin(), ws.lambda.end(), ws.aux.begin()); // save [M s] norms
     for (std::size_t i = 0; i < nConstraints; ++i) {
         ws.lambda[i] = lambdaTerm * ws.primal[i];
     }
     MultTransp(ws.M, ws.lambda, ws.activeConstraints, ws.x);
-    const double invScaleFactor = 1.0 / scaleFactorDB;
+    const fp_t invScaleFactor = 1.0 / scaleFactorDB;
     for (std::size_t i = 0; i < nVariables; ++i) {
         ws.x[i] = (ws.x[i] - ws.v[i]) * ws.Chol[i];
     }
@@ -553,7 +553,7 @@ void Core::ComputeOrigSolution() {
     //   = 0.5 * x_T * Ch * Ch * x + v_T * Ch * x
     cost = 0.0;
     for (std::size_t i = 0; i < nPVariables; ++i) {
-        double cx = ws.x[i] / ws.Chol[i];
+        fp_t cx = ws.x[i] / ws.Chol[i];
         cost += (0.5 * cx + ws.v[i]) * cx;
         ws.x[i] *= invScaleFactor;
     
@@ -567,7 +567,7 @@ void Core::ComputeOrigSolution() {
 void Core::FillOutput() {
     output.dualExitStatus = static_cast<unsigned char>(dualExitStatus);
     if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY){
-        output.x = std::vector<double>(ws.x.begin(), ws.x.begin() + nPVariables);
+        output.x = std::vector<fp_t>(ws.x.begin(), ws.x.begin() + nPVariables);
         output.lambdaC.resize(nPConstraints, 0.0);
         for (std::size_t i = 0; i < nPConstraints; ++i) {
             output.lambdaC[i] = ws.lambda[i];
@@ -607,8 +607,8 @@ void Core::SetInitData(const Input &problem) {
                 uCallback->initData.CholInv = &ws.Chol;
                 uCallback->initData.M = &ws.M;
                 uCallback->initData.s = &ws.s;
-                uCallback->initData.c = &const_cast<std::vector<double>&>(problem.c);
-                uCallback->initData.b = &const_cast<std::vector<double>&>(problem.b);
+                uCallback->initData.c = &const_cast<std::vector<fp_t>&>(problem.c);
+                uCallback->initData.b = &const_cast<std::vector<fp_t>&>(problem.b);
             }
         }
         uCallback -> ProcessData(1);
@@ -658,8 +658,8 @@ void Core::SetLinearSolver() {
 void Core::Solve() {
     dualExitStatus = DualLoopExitStatus::UNKNOWN;
     primalExitStatus = PrimalLoopExitStatus::DIDNT_STARTED;
-    rsNorm = std::numeric_limits<double>::max();
-    cost = std::numeric_limits<double>::max();
+    rsNorm = std::numeric_limits<fp_t>::max();
+    cost = std::numeric_limits<fp_t>::max();
     gamma = 1.0;
     newActiveIndex = nConstraints;
     dualIteration = 0;

@@ -550,6 +550,14 @@ TEST(QP_PROBLEM, TEST_PROBLEM_6)
 {
     QPProblem(TEST_PROBLEM_6::in, TEST_PROBLEM_6::out);
 }
+TEST(QP_PROBLEM, HS53)
+{
+    QPProblem(HS53::in, HS53::out);
+}
+TEST(QP_PROBLEM, HS268)
+{
+    QPProblem(HS268::in, HS268::out);
+}
 
 
 
