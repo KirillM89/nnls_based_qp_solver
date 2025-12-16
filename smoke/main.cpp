@@ -110,14 +110,14 @@ int main() {
     solver.Solve();
     QP_NNLS::Output nnlsOutput = solver.GetOutput();
     bool success = true;
-    if (nnlsOutput.dualExitStatus == 3) {
+    if (nnlsOutput.exitStatus == 3) {
         std::cout << "infeasibility" << std::endl;
         success = false;
-    } else if (nnlsOutput.dualExitStatus == 2) {
+    } else if (nnlsOutput.exitStatus == 2) {
         std::cout << "iterations" << std::endl;
-    } else if (nnlsOutput.dualExitStatus == 0)  {
+    } else if (nnlsOutput.exitStatus == 0)  {
         std::cout << "all dual positive" << std::endl;
-    } else if (nnlsOutput.dualExitStatus == 1) {
+    } else if (nnlsOutput.exitStatus == 1) {
         std::cout <<  "full active set" << std::endl;
     } else {
         abort();

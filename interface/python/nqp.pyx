@@ -90,9 +90,9 @@ def Solve(double[:,:]H, double[:]c, double[:,:]A = None, double[:]b = None, \
     cdef QPNNLS solver
     solver.Init(configDefault)
     if not solver.SetProblem(problem):
-        return (1, None, None, None, None, None)
+        return (100, None, None, None, None, None)
     solver.Solve()
     cdef Output out = solver.GetOutput()
-    return (out.dualExitStatus, out.cost, np.array(out.x), np.array(out.lambdaC),
+    return (out.exitStatus, out.cost, np.array(out.x), np.array(out.lambdaC),
             np.array(out.lambdaLw), np.array(out.lambdaUp))
  

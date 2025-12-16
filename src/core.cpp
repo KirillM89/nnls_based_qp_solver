@@ -93,7 +93,7 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
     std::vector<int> pmt(nV, -1); // must be filled with -1.0 by default
     std::size_t nZr, nNg; //number of zero and negative diagonal elements in matrix D of LDL_T decomposition
     const bool inPlaceDZeroCor = false;
-    unsigned char rStat  = InPlaceLdlt(ld, pmt, nZr, nNg, false, inPlaceDZeroCor);
+    unsigned char rStat  = InPlaceLdlt(ld, pmt, nZr, nNg, true, inPlaceDZeroCor);
     //continue if D has only positive values or zero values with option zeroDCor==true
     if ((rStat == 1u && !config.posDefCorrection) || rStat > 1u) {
         if (rStat == 1u) {
@@ -291,6 +291,7 @@ bool Core::PrepareNNLS(const Input &problem) {
     timer->Start();
     const matrix_t ld = ComputeLDLT(problem.H);
     if (initStatus != InitStageStatus::SUCCESS) {
+        output.exitStatus = 100 + static_cast<unsigned int>(initStatus);
         return false;
     }
     this->ld = ld;
@@ -570,7 +571,7 @@ void Core::ComputeOrigSolution() {
 }
 
 void Core::FillOutput() {
-    output.dualExitStatus = static_cast<unsigned char>(dualExitStatus);
+    output.exitStatus = static_cast<unsigned char>(dualExitStatus);
     if (dualExitStatus != DualLoopExitStatus::INFEASIBILITY){
         output.x = std::vector<fp_t>(ws.x.begin(), ws.x.begin() + nPVariables);
         output.lambdaC.resize(nPConstraints, 0.0);

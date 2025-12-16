@@ -341,7 +341,7 @@ QPProblem::QPProblem(const Input& in, const Output& out, const Configuration& co
     }
     solver.Solve();
     const QP_NNLS::Output& sOut = solver.GetOutput();
-    EXPECT_EQ(sOut.dualExitStatus, out.dualExitStatus);
+    EXPECT_EQ(sOut.exitStatus, out.exitStatus);
     EXPECT_EQ(sOut.isPositiveDefinite, out.isPositiveDefinite);
     EXPECT_EQ(posDef, out.isPositiveDefinite);
     EXPECT_EQ(sOut.nIterations, out.nIterations);

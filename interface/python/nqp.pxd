@@ -30,7 +30,7 @@ cdef extern from "types.h" namespace "QP_NNLS":
     
     cdef struct Output:
         bool isPositiveDefinite
-        unsigned char dualExitStatus
+        unsigned char exitStatus
         unsigned int nIterations
         double cost
         vector[double] x
