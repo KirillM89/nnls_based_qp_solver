@@ -293,6 +293,62 @@ namespace TEST_PROBLEM_6 {
     Input in{ H, A, b, c, {}, {}, 0};
     Output out{ true, 0, 1, 5.0, {-1.0, 0.0}, {10.0, 0}, {}, {} };
 }
+namespace TEST_PROBLEM_7 {
+    matrix_t H(GetIdentity(2));
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { 1.0, 1.0 };
+    std::vector<fp_t> c = { 0, 0 };
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, 0.0, {0.0, 0.0}, {0.0, 0.0}, {}, {} };
+}
+namespace TEST_PROBLEM_8 {
+    matrix_t H = {{1.0, 0.0}, {0.0, 1.0}};
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { 1.0, 1.0 };
+    std::vector<fp_t> c = { 1.0, -1.0 };
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, -1.0, {-1.0, 1.0}, {0.0, 0.0}, {}, {} };
+}
+namespace TEST_PROBLEM_9 {
+    matrix_t H = { {10.0, 0.0}, {0.0, 1.0} };
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { 1.0, 1.0 };
+    std::vector<fp_t> c = { 2.0, -1.0 };
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, -0.7, {-0.2, 1.0}, {0.0, 0.0}, {}, {} };
+}
+namespace TEST_PROBLEM_10 {
+    matrix_t H = { {10.0, 2.0}, {2.0, 2.0} };
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { 1.0, 1.0 };
+    std::vector<fp_t> c = { 1.0, -1.0 };
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, -0.5, {-0.25, 0.75}, {0.0, 0.0}, {}, {} };
+}
+namespace TEST_PROBLEM_11 {
+    matrix_t H = { {10.0, 2.0}, {2.0, 2.0} };
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { 1.0, 1.0 };
+    std::vector<fp_t> c = { 0.0 , 0.0 };
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, 0.0, {0.0, 0.0}, {0.0, 0.0}, {}, {} };
+}
+namespace TEST_PROBLEM_12 {
+    matrix_t H = { {10.0, 2.0}, {2.0, 2.0} };
+    matrix_t A = { {1.0, 0.0}, {0.0, 1.0} };
+    std::vector<fp_t> b = { 1.0, 5.0 };
+    std::vector<fp_t> c = { 5.0 , -5.0 };
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, -12.5, {-1.25, 15.0 / 4.0}, {0.0, 0.0}, {}, {} };
+}
+namespace TEST_PROBLEM_13 {
+    matrix_t H = {{10.0}};
+    matrix_t A = {{1.0}};
+    std::vector<fp_t> b = {1.0};
+    std::vector<fp_t> c = {5.0};
+    Input in{ H, A, b, c, {}, {}, 0 };
+    Output out{ true, 0, 0, -1.25, {-0.5}, {0.0}, {}, {} };
+}
 
 namespace REAL_1 {
     const matrix_t H(GetIdentity(12));
@@ -366,12 +422,10 @@ namespace HS268 {
     const std::vector<fp_t> b = {5., -20., 40., -11., 30.};
     const std::vector<fp_t> lw, up;
     Input in{ H, A, b, c, lw, up, 0 };
-    const std::vector<fp_t> x = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    const std::vector<fp_t> x = { 1.0, 2.0, -1.0, 3.0, -4.0 };
     const std::vector<fp_t> dualA = { 0.0, 0.0, 0.0, 0.0, 0.0 };
-    const std::vector<fp_t> dualL = { 0.0, 0.0, 0.0, 0.0, 0.0 };
-    const std::vector<fp_t> dualU = { 0.0, 0.0, 0.0, 0.0, 0.0 };
-    const fp_t cost = 0.0;
-    Output out{ true, 1, 12, cost, x, dualA, dualL, dualU };
+    const fp_t cost = -14463.000000000011;
+    Output out{ true, 0, 0, cost, x, dualA, {}, {}};
 }
 
 namespace SIMPLE_2 {

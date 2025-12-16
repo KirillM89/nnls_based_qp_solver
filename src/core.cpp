@@ -105,7 +105,7 @@ matrix_t Core::ComputeLDLT(const matrix_t& H) {
         }
     } else {
        // if (settings.checkFactorization) {
-       //     CheckFactorization(ld, H, pmt);
+            //CheckFactorization(ld, H, pmt);
        // }
         output.isPositiveDefinite = true;
         const fp_t minChol = 2.0 * mEps; // min diagonal value
@@ -195,7 +195,9 @@ void Core::FillM(const matrix_t& ld,  const Input& problem) {
             }
             for (std::size_t j = 0; j < nV; ++j) {
                 if (c == 0) {
-                    ws.v[v] += ld[j][v] * problem.c[j] * ws.Chol[v]; // v = Chol_-T * c_new =  Chol_-T * (P * L_-T)_T * c
+                    // v = Chol_-T * c_new =  Chol_-T * (P * L_-T)_T * c 
+                    // c_T * (P * L_-T) * Chol
+                    ws.v[v] += ld[j][v] * problem.c[j] * ws.Chol[v]; 
                 }
                 if (nPConstraints) {
                     ws.M[c][v] += problem.A[c][j] * ld[j][v]; // A_new = A * (P * L_-T)
@@ -291,6 +293,7 @@ bool Core::PrepareNNLS(const Input &problem) {
     if (initStatus != InitStageStatus::SUCCESS) {
         return false;
     }
+    this->ld = ld;
     FillM(ld, problem);
     if (config.largeBoundsPenalty) {
         ws.M.back().back() = -1.0;
@@ -556,8 +559,10 @@ void Core::ComputeOrigSolution() {
         fp_t cx = ws.x[i] / ws.Chol[i];
         cost += (0.5 * cx + ws.v[i]) * cx;
         ws.x[i] *= invScaleFactor;
-    
     }
+    auto sol = ws.x;
+    Mult(ld, ws.x, sol);
+    ws.x = sol;
     cost *= invScaleFactor * invScaleFactor;
     for (std::size_t i = 0; i < nConstraints; ++i) {
         ws.lambda[i] *= (-ws.aux[i] * invScaleFactor);
@@ -572,7 +577,6 @@ void Core::FillOutput() {
         for (std::size_t i = 0; i < nPConstraints; ++i) {
             output.lambdaC[i] = ws.lambda[i];
         }
-
         if (nUpBounds | nLwBounds) {
             if (nUpBounds) {
                 output.lambdaUp.resize(nPVariables, 0.0);
@@ -674,8 +678,9 @@ void Core::Solve() {
         }
         ComputeDualVariable();
         dualTolerance = -styGamma * config.origPrimalFsb; // primal feasiblility was scaled in DB scaling
+        //dualTolerance = styGamma * config.origPrimalFsb; // primal feasiblility was scaled in DB scaling
         SelectNewActiveComponent();
-        if(newActiveIndex == nConstraints) { //set to nConstraints in not found
+        if(newActiveIndex == nConstraints) { //set to nConstraints if not found
             //Proccess singular components after all nonsingular
             if (config.rejectSingular) {
                 config.rejectSingular = false;

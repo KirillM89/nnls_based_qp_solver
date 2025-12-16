@@ -79,6 +79,7 @@ private:
     Output output;
     InitStageStatus initStatus;
     std::vector<LinSolverTime> linSolverTimes;
+    matrix_t ld;
     bool PrepareNNLS(const Input& problem);
     bool OrigInfeasible();
     bool FullActiveSet();
