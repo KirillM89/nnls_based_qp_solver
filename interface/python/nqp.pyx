@@ -2,91 +2,108 @@
 """
 Created on Wed Oct 22 16:15:49 2025
 
-@author: m00829527
+@author: Kirill Mitenkov
 """
-
 import numpy as np
 cimport nqp
+"""
+user-defined parameters
+"""
+LIN_SOLVER_TYPE = "linSolverType"
+LOG_LEVEL = "logLevel"
+LARGE_BONDS_PENALTY = "largeBoundsPenalty"
+POS_DEF_CORRECTION = "posDefCorrection"
+GAMMA_UPDATE = "gammaUpdate"
+
+VALID_PARAMS = \
+{
+   LIN_SOLVER_TYPE : ("ldlt", "qr"),
+   LOG_LEVEL  : (0, 1, 2, 3, 4, 5),
+   LARGE_BONDS_PENALTY : (True, False),
+   POS_DEF_CORRECTION : (True, False),
+   GAMMA_UPDATE : (True, False)
+}
+
 def Solve(double[:,:]H, double[:]c, double[:,:]A = None, double[:]b = None, \
-          double[:]lw = None, double[:]up = None, unsigned int nEq = 0):
-    nn = H.shape
-    if nn[0] != nn[1]:
-       print("Invalid H")
+          double[:]lw = None, double[:]up = None, unsigned int nEq = 0, **params):
+    actualParams = {}
+    if params:
+        for k, v in params.items():
+            if k not in VALID_PARAMS:
+                print("invalid key {k}")
+                continue
+            elif v not in VALID_PARAMS[k]:
+                print("invalid value {v} for key {k}")
+                continue
+            elif k == LIN_SOLVER_TYPE:
+                if v == "ldlt":
+                    actualParams[k] = 0 
+                elif v == "qr":
+                    actualParams[k] = 1
+                
+    if H.shape[0] != H.shape[1]:
+       print("ERROR: H must be symmetric {H.shape}")
        return None
-    n = nn[0]   
-    if c.shape[0] != n:
-       print("Invalid c")
+    nVariables = H.shape[0]   
+    if c.shape[0] != nVariables:
+       print("ERROR: c size {s.shape[0]} must be equal to H size {nVariables}")
        return None
-    if lw is None:
-        nl = 0
-    else:
-        nl = lw.shape[0]
-    if up is None:
-        nup = 0
-    else:
-        nup = up.shape[0]   
-    if nl > 0 and nup > 0 and nl != nup:
-        print("Inconsistent lw up bounds")
+    nLwBnds = 0 if lw is None else lw.shape[0]
+    nUpBnds = 0 if up is None else up.shape[0]
+    if (nLwBnds > 0 and nUpBnds > 0 and (nLwBnds != nUpBnds or nUpBnds != nVariables)) or \
+       (nLwBnds == 0 and nUpBnds > 0 and nUpBnds != nVariables) or \
+       (nUpBnds == 0 and nLwBnds > 0 and nLwBnds != nVariables):    
+        print("ERROR: Inconsistent lw up bounds sizes {nLwBnds} {nUpBnds}")
         return None
-    if  A is None:
-        nc = 0
-    else: 
-        nc = A.shape[0]
-    if b is None:
-        nb = 0
-    else:
-        nb = b.shape[0]
-    if nb != nc:
-        print("Inconsistent A and b")
+    nConstraints = 0 if A is None else A.shape[0] 
+    bSize = 0 if b is None else b.shape[0]
+    if bSize != nConstraints:
+        print("ERROR: Inconsistent A and b sizes {nConstraints} {bSize}")
         return None
-    if nEq > nc:
-        print("Invalid nEq")
+    if nEq > nConstraints:
+        print("ERROR: number of equlaity constraints {nEq} must be <= total number of constraints {nConstraints}")
         return None 
-    cdef int n_lw = nl
-    cdef int n_up = nup
-    cdef int n_x = n
-    cdef int n_c = nc
+    cdef int n_lw = nLwBnds
+    cdef int n_up = nUpBnds
+    cdef int n_x = nVariables
+    cdef int n_c = nConstraints
     cdef Input problem
-    problem.A.resize(n_c)
     cdef unsigned int ii, jj
     cdef Py_ssize_t i, j
-    for i in range(nc):
-        ii = <unsigned int>i
-        problem.A[ii].resize(n_x)
-        for j in range(n):
-            jj = <unsigned int>j
-            problem.A[ii][jj] = A[i][j]
-            
-    problem.H.resize(n_x)
-    for i in range(n):
-        ii = <unsigned int>i
-        problem.H[ii].resize(n_x)
-        for j in range(n):
-            jj = <unsigned int>j
-            problem.H[ii][jj] = H[i][j] 
-            
-    problem.c.resize(n_x)
-    for i in range(n):
-        ii = <unsigned int>i  
-        problem.c[ii] = c[i]
-        
+    problem.A.resize(n_c)
     problem.b.resize(n_c)
-    for i in range(nc):
-        ii = <unsigned int>i  
-        problem.b[ii] = b[i]  
-        
+    for i in range(nConstraints):
+        problem.b[<unsigned int>i ] = b[i]
+        problem.A[<unsigned int>i].resize(n_x)
+        for j in range(nVariables):
+            problem.A[<unsigned int>i][<unsigned int>j] = A[i][j]            
+    problem.H.resize(n_x)
+    problem.c.resize(n_x)
     problem.lw.resize(n_lw)
-    for i in range(nl):
-        ii = <unsigned int>i  
-        problem.lw[ii] = lw[i] 
-    
     problem.up.resize(n_up)
-    for i in range(nup):
-        ii = <unsigned int>i  
-        problem.up[ii] = up[i]       
+    for i in range(nVariables):
+        problem.H[<unsigned int>i].resize(n_x)
+        problem.c[<unsigned int>i] = c[i]
+        if nLwBnds > 0:
+            problem.lw[<unsigned int>i] = lw[i] 
+        if nUpBnds > 0:
+            problem.up[<unsigned int>i] = up[i] 
+        for j in range(nVariables):
+            problem.H[<unsigned int>i][<unsigned int>j] = H[i][j] 
     problem.nEqConstraints = nEq
-    print("problem:", "nx", n, "nC", nc, "nLw", nl, "nUp", nup)
+    print("problem:", "nVariables", n_x, "nConstarints", n_c, "nLowerBounds", n_lw, "nUpperBounds", n_up)
     cdef Configuration configDefault
+    for k, v in actualParams.items():
+        if k == LIN_SOLVER_TYPE:
+            configDefault.linSolverType = <unsigned int>v
+        elif k == LOG_LEVEL:
+            configDefault.logLevel = <unsigned int>v
+        elif k == LARGE_BONDS_PENALTY:
+            configDefault.largeBoundsPenalty = <bool>v
+        elif k == POS_DEF_CORRECTION:
+            configDefault.posDefCorrection = <bool>v
+        elif k == GAMMA_UPDATE:
+            configDefault.gammaUpdate = <bool>v
     cdef QPNNLS solver
     solver.Init(configDefault)
     if not solver.SetProblem(problem):

@@ -1,3 +1,8 @@
-dist
-*.egg-info
-*.cpp
+/*
+!/nqp.pxd
+!/nqp.pyx
+!/setup.py
+!/test.py
+!/.gitignore
+!/MANIFEST.in
+!/pyproject.toml
