@@ -291,7 +291,7 @@ bool Core::PrepareNNLS(const Input &problem) {
     timer->Start();
     const matrix_t ld = ComputeLDLT(problem.H);
     if (initStatus != InitStageStatus::SUCCESS) {
-        output.exitStatus = 100 + static_cast<unsigned int>(initStatus);
+        output.exitStatus = static_cast<unsigned int>(initStatus);
         return false;
     }
     this->ld = ld;

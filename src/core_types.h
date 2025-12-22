@@ -12,7 +12,19 @@ enum class LinSolverType {
     DYNAMIC_LDLT,
     MSS1,
 };
+enum class ErrorCode {
+    D_Z = 101,
+    D_N,
+    D_ZN,
 
+};
+enum class ExitStatus {
+    ALL_DUAL_POSITIVE = 0,
+    FULL_ACTIVE_SET = 1,
+    ITERATIONS = 2,
+    INFEASIBILITY = 3,
+    UNKNOWN
+};
 enum class InitStageStatus {
     SUCCESS = 0,
     D_Z = 1,
